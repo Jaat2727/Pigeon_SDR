@@ -1,0 +1,169 @@
+/* 
+ * ===== APP.CSS =====
+ * Global styles & design tokens for the entire NovaNews app.
+ * This file sets up fonts, colors, spacing, and shared components
+ * like the loading spinner and state messages.
+ *
+ * COLOR PALETTE:
+ *   - Background: very dark blue-blacks (#0c0f14, #12161e)
+ *   - Accent: indigo (#6366f1) — used for buttons, active states
+ *   - Text: light gray (#e8eaed) primary, muted gray (#848d97) secondary
+ *   - Success: green (#22c55e)  |  Error: red (#ef4444)
+ */
+
+/* ── Google Fonts ── */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&family=Playfair+Display:wght@400;500;600;700&display=swap');
+
+/* ── Reset ── */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* ── Design Tokens (CSS Variables) ── */
+:root {
+  /* Backgrounds */
+  --bg-primary: #0c0f14;
+  --bg-secondary: #12161e;
+  --bg-card: rgba(18, 22, 30, 0.75);
+  --bg-card-solid: #161b25;
+
+  /* Borders */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Accent colors */
+  --accent: #6366f1;
+  --accent-light: #818cf8;
+  --accent-soft: rgba(99, 102, 241, 0.08);
+
+  /* Text colors */
+  --text-primary: #e8eaed;
+  --text-secondary: #848d97;
+  --text-muted: #3d434d;
+
+  /* Status colors */
+  --green: #22c55e;
+  --green-soft: rgba(34, 197, 94, 0.08);
+  --red: #ef4444;
+
+  /* Border radius */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+
+  /* Shadows */
+  --shadow-card: 0 2px 8px rgba(0,0,0,0.25), 0 8px 24px rgba(0,0,0,0.12);
+  --shadow-hover: 0 8px 32px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.2);
+
+  /* Transitions */
+  --transition: all 0.2s ease;
+  --transition-slow: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Base styles ── */
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Very subtle background gradient — NOT contrasty */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 70% 50% at 30% 0%, rgba(99, 102, 241, 0.03) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+#root { position: relative; z-index: 1; }
+
+/* Headings use Outfit font */
+h1, h2, h3, h4 {
+  font-family: 'Outfit', sans-serif;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+/* ── Custom scrollbar ── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+
+/* ── Loading screen (shown while checking auth) ── */
+.loading-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  gap: 1.25rem;
+}
+
+.loading-spinner {
+  width: 36px;
+  height: 36px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loading-text {
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  font-weight: 500;
+  animation: fadeInOut 2s ease-in-out infinite;
+}
+
+@keyframes fadeInOut {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+/* ── State messages (empty states, errors, loading) ── */
+.state-msg {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 4rem 2rem;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  text-align: center;
+  min-height: 300px;
+}
+
+.state-msg.error { color: #fca5a5; }
+
+/* ── Fallback thumbnail (when article has no image) ── */
+.thumb-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: #151a24;
+}
+
+.thumb-fallback-icon { font-size: 2rem; opacity: 0.35; }
+
+.thumb-fallback-text {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 600;
+}
