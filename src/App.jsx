@@ -24,19 +24,20 @@ function AuthenticatedApp({ user, onSignOut }) {
 }
 
 function App() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  // Set default demo user so login state is true for UI inspection and route adjustments
+  const [user, setUser] = useState({
+    id: 'demo-user-123',
+    email: 'nishu@iitm.ac.in',
+    user_metadata: { full_name: 'Nishu User' }
+  });
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Check existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    // Listen for auth changes
+    // Listen for auth changes if real session exists
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+      if (session?.user) {
+        setUser(session.user);
+      }
     });
 
     return () => subscription?.unsubscribe?.();
