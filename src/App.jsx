@@ -1,42 +1,33 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { supabase } from './supabaseClient';
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import Apply from './pages/Apply';
-import History from './pages/History';
-import Profile from './pages/Profile';
+
+// State & Layout
+import { AppProvider } from './context/AppContext';
 import DashboardLayout from './layouts/DashboardLayout';
+
+// Pages
+import Login from './pages/Login';
+import CampaignsList from './pages/CampaignsList';
+import CampaignDashboard from './pages/CampaignDashboard';
+import CreateCampaign from './pages/CreateCampaign';
+
 import './App.css';
 
+// Placeholder for unbuilt pages
 function PlaceholderPage({ title, description }) {
   return (
-    <div style={{
-      padding: '32px',
-      maxWidth: '800px',
-    }}>
-      <h1 style={{
-        fontFamily: "'Outfit', sans-serif",
-        fontSize: '24px',
-        fontWeight: 700,
-        color: '#0f172a',
-        marginBottom: '8px',
-      }}>{title}</h1>
-      <p style={{
-        fontSize: '14px',
-        color: '#64748b',
-        marginBottom: '32px',
-      }}>{description}</p>
-      <div style={{
-        background: '#fff',
-        border: '1px solid #e5e7eb',
-        borderRadius: '12px',
-        padding: '60px 32px',
-        textAlign: 'center',
-        color: '#94a3b8',
-        fontSize: '14px',
-      }}>
-        This section is coming soon. Configuration panel will appear here.
+    <div className="page animate-in">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">{title}</h1>
+          <p className="page-subtitle">{description}</p>
+        </div>
+      </div>
+      <div className="card">
+        <div className="card__body" style={{ textAlign: 'center', padding: 'var(--sp-10)', color: 'var(--text-muted)' }}>
+          This module is part of the next build phase.
+        </div>
       </div>
     </div>
   );
@@ -44,20 +35,30 @@ function PlaceholderPage({ title, description }) {
 
 function AuthenticatedApp({ user, onSignOut }) {
   return (
-    <DashboardLayout user={user} onSignOut={onSignOut}>
-      <Routes>
-        <Route path="/dashboard" element={<Dashboard user={user} />} />
-        <Route path="/apply" element={<Apply user={user} />} />
-        <Route path="/prospects" element={<PlaceholderPage title="Prospect Database" description="Browse, filter and manage your outreach prospect lists." />} />
-        <Route path="/prompts" element={<PlaceholderPage title="AI Prompt Templates" description="Configure reasoning prompts, personalization templates, and reply logic." />} />
-        <Route path="/conflicts" element={<PlaceholderPage title="Conflict Resolution" description="Review domain warmup issues, DMARC warnings, and sending conflicts." />} />
-        <Route path="/knowledge" element={<PlaceholderPage title="Knowledge Base" description="Manage product docs, case studies, and context fed to AI agents." />} />
-        <Route path="/settings" element={<Profile user={user} />} />
-        <Route path="/history" element={<History user={user} />} />
-        <Route path="/profile" element={<Profile user={user} />} />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
-      </Routes>
-    </DashboardLayout>
+    <AppProvider>
+      <DashboardLayout user={user} onSignOut={onSignOut}>
+        <Routes>
+          {/* Campaigns */}
+          <Route path="/campaigns" element={<CampaignsList />} />
+          <Route path="/campaigns/new" element={<CreateCampaign />} />
+          <Route path="/campaigns/:id" element={<CampaignDashboard />} />
+          <Route path="/campaigns/:id/edit" element={<CreateCampaign />} />
+          
+          {/* Prospects */}
+          <Route path="/prospects" element={<PlaceholderPage title="Prospects" description="Browse, filter and manage your outreach prospect lists." />} />
+          <Route path="/prospects/:id" element={<PlaceholderPage title="Prospect Detail" description="Timeline and knowledge used for this prospect." />} />
+          
+          {/* Other Modules */}
+          <Route path="/prompts" element={<PlaceholderPage title="Prompt Versions" description="Configure reasoning prompts, personalization templates, and reply logic." />} />
+          <Route path="/conflicts" element={<PlaceholderPage title="Conflicts" description="Review domain warmup issues, DMARC warnings, and sending conflicts." />} />
+          <Route path="/knowledge" element={<PlaceholderPage title="Knowledge Base" description="Manage product docs, case studies, and context fed to AI agents." />} />
+          <Route path="/settings" element={<PlaceholderPage title="Settings" description="Manage reps, channels, guardrails, and platform costs." />} />
+          
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/campaigns" replace />} />
+        </Routes>
+      </DashboardLayout>
+    </AppProvider>
   );
 }
 

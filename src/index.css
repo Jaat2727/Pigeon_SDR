@@ -1,11 +1,5 @@
-/* Reset — all app-specific styles are in App.css */
-*, *::before, *::after {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-}
+/* Entry point — imports design tokens, everything else flows from there */
+@import './tokens.css';
 
 #root {
   min-height: 100vh;

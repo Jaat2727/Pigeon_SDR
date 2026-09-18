@@ -1,0 +1,189 @@
+/* ═══════════════════════════════════════════════
+   PIGEON SDR — Design Tokens (Light Theme "PinenMFB" Style)
+   ═══════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
+
+:root {
+  /* ── Surfaces ── */
+  --canvas:       #F4F7FE; /* Soft light blue/grey background */
+  --surface-bar:  #FFFFFF; /* White sidebar/topbar */
+  --surface-card: #FFFFFF; /* White cards */
+  --surface-raised: #FFFFFF;
+
+  /* ── Borders ── */
+  --border:        #E9EDF7;
+  --border-subtle: #F0F3F9;
+
+  /* ── Text ── */
+  --text-primary:   #1B254B; /* Dark navy for headings */
+  --text-secondary: #707EAE; /* Cool grey for subtitles */
+  --text-muted:     #A3AED0; /* Light grey for tertiary */
+
+  /* ── Accents & Status (matching inspiration) ── */
+  --accent:  #007A5A; /* Vibrant Teal/Green */
+  --accent-hover: #04654B;
+  --accent-soft: #E5F6F2;
+  --success: #05CD99;
+  --success-soft: #E5FAFA;
+  --warning: #FFCE20;
+  --warning-soft: #FFF8DF;
+  --danger:  #EE5D50;
+  --danger-soft: #FDECEB;
+
+  /* Additional chart/icon colors */
+  --brand-purple: #4318FF;
+  --brand-blue: #39B8FF;
+  --brand-orange: #FFB547;
+  --brand-green: #05CD99;
+
+  /* ── Typography ── */
+  --font-ui:    'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono:  'IBM Plex Mono', 'Fira Code', monospace;
+  --font-title: 'Plus Jakarta Sans', sans-serif;
+
+  --text-xs:  12px;
+  --text-sm:  13px;
+  --text-md:  14px;
+  --text-lg:  16px;
+  --text-xl:  20px;
+  --text-2xl: 24px;
+  --text-3xl: 34px;
+
+  --leading-normal: 1.6;
+  --leading-tight: 1.3;
+
+  /* ── Spacing scale ── */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-8: 48px;
+  --sp-10: 64px;
+
+  /* ── Radii (much rounder) ── */
+  --radius-card:  20px;
+  --radius-input: 12px;
+  --radius-btn:   12px;
+  --radius-pill:  999px;
+
+  /* ── Shadows (soft and diffused) ── */
+  --shadow-card: 0px 18px 40px rgba(112, 144, 176, 0.12);
+  --shadow-raised: 0px 20px 40px rgba(0, 0, 0, 0.08);
+  --shadow-dropdown: 0px 20px 40px rgba(0, 0, 0, 0.1);
+
+  /* ── Transitions ── */
+  --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 350ms;
+
+  /* ── Layout ── */
+  --topbar-h: 70px;
+  --sidebar-w: 260px;
+
+  /* ── Campaign colours (adjusted for light theme) ── */
+  --campaign-1: #4318FF;
+  --campaign-2: #05CD99;
+  --campaign-3: #FFCE20;
+  --campaign-4: #EE5D50;
+  --campaign-5: #39B8FF;
+  --campaign-6: #F472B6;
+  --campaign-7: #007A5A;
+  --campaign-8: #FFB547;
+}
+
+/* ── Base reset ── */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-ui);
+  font-size: var(--text-md);
+  line-height: var(--leading-normal);
+  background: var(--canvas);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Tabular figures everywhere numbers sit ── */
+.mono, [data-mono],
+td, th,
+.stat-value, .badge-count, .funnel-count,
+.metric-value, .cost-value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Headings ── */
+h1, h2, h3, h4 {
+  font-family: var(--font-title);
+  font-weight: 700;
+  line-height: var(--leading-tight);
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+/* ── Focus visibility ── */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: var(--radius-pill);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+/* ── Utility classes ── */
+.text-secondary { color: var(--text-secondary); }
+.text-muted { color: var(--text-muted); }
+.text-accent { color: var(--accent); }
+.text-success { color: var(--success); }
+.text-warning { color: var(--warning); }
+.text-danger { color: var(--danger); }
+.font-mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.font-title { font-family: var(--font-title); }

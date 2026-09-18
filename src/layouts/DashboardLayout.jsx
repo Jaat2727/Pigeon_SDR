@@ -1,87 +1,161 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { 
-  Megaphone, 
-  Users, 
-  MessageSquareText, 
-  AlertTriangle, 
-  BookOpen, 
-  Settings, 
-  Activity,
-  ChevronRight
+import {
+  Megaphone,
+  Users,
+  MessageSquareText,
+  AlertTriangle,
+  BookOpen,
+  Settings,
+  OctagonX,
+  Play,
+  Search,
+  Bell
 } from 'lucide-react';
+import { useApp } from '../context/AppContext';
+import { Badge, ConfirmDialog, KillBanner } from '../components/index.jsx';
 import pigeonLogo from '../logo.png';
 import './DashboardLayout.css';
 
-const navItems = [
-  { name: 'Campaigns', path: '/dashboard', icon: Megaphone, badge: 5 },
-  { name: 'Prospects', path: '/prospects', icon: Users, badge: 847 },
-  { name: 'Prompts', path: '/prompts', icon: MessageSquareText, badge: null },
-  { name: 'Conflicts', path: '/conflicts', icon: AlertTriangle, badge: 2, badgeType: 'danger' },
-  { name: 'Knowledge Base', path: '/knowledge', icon: BookOpen, badge: null },
-  { name: 'Settings', path: '/settings', icon: Settings, badge: null },
+const NAV_ITEMS = [
+  { section: 'MENU', items: [
+    { name: 'Campaigns',      path: '/campaigns',  icon: Megaphone,        badgeKey: 'campaigns' },
+    { name: 'Prospects',      path: '/prospects',   icon: Users,            badgeKey: 'prospects' },
+    { name: 'Prompts',        path: '/prompts',     icon: MessageSquareText, badgeKey: null },
+  ]},
+  { section: 'SYSTEM', items: [
+    { name: 'Conflicts',      path: '/conflicts',   icon: AlertTriangle,    badgeKey: 'conflicts' },
+    { name: 'Knowledge',      path: '/knowledge',   icon: BookOpen,         badgeKey: null },
+  ]},
+  { section: 'TOOLS', items: [
+    { name: 'Settings',       path: '/settings',    icon: Settings,         badgeKey: null },
+  ]}
 ];
 
-export default function DashboardLayout({ children, user, onSignOut }) {
-  const [theme] = useState('dark');
-  const location = useLocation();
+export default function DashboardLayout({ children, user }) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const {
+    isKilled, toggleKillSwitch,
+    campaigns, conflictsCount,
+  } = useApp();
 
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-  }, [theme]);
+  const [showKillConfirm, setShowKillConfirm] = useState(false);
+
+  const handleKillSwitch = () => {
+    if (isKilled) {
+      toggleKillSwitch(false);
+    } else {
+      setShowKillConfirm(true);
+    }
+  };
+
+  const getBadge = (key) => {
+    switch (key) {
+      case 'campaigns': return campaigns.length || null;
+      case 'conflicts': return conflictsCount || null;
+      default: return null;
+    }
+  };
+
+  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  const pageTitle = NAV_ITEMS.flatMap(g => g.items).find(i => location.pathname.startsWith(i.path))?.name || 'Dashboard';
 
   return (
-    <div className="sdr-app">
+    <div className="sdr-shell">
       {/* ── Sidebar ── */}
       <aside className="sdr-sidebar">
-        {/* Brand */}
-        <div className="sidebar-brand" onClick={() => navigate('/dashboard')}>
-          <div className="brand-icon-wrap">
-            <img src={pigeonLogo} alt="Pigeon SDR" className="brand-logo-img" />
+        <div className="sidebar-brand" onClick={() => navigate('/campaigns')} style={{ cursor: 'pointer' }}>
+          <div className="sidebar-logo">
+            <img src={pigeonLogo} alt="Logo" />
           </div>
-          <span className="brand-name">Pigeon SDR</span>
+          <span className="sidebar-wordmark">PigeonSDR</span>
         </div>
 
-        {/* Nav Items */}
         <nav className="sidebar-nav">
-          {navItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            return (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                className={`nav-item ${isActive ? 'active' : ''}`}
-              >
-                <item.icon size={18} className="nav-item-icon" />
-                <span className="nav-item-label">{item.name}</span>
-                {item.badge !== null && (
-                  <span className={`nav-badge ${item.badgeType === 'danger' ? 'badge-danger' : ''}`}>
-                    {item.badge}
-                  </span>
-                )}
-              </NavLink>
-            );
-          })}
+          {NAV_ITEMS.map((group, idx) => (
+            <div key={idx}>
+              <div className="nav-section-label">{group.section}</div>
+              {group.items.map((item) => {
+                const isActive = location.pathname.startsWith(item.path);
+                const badge = getBadge(item.badgeKey);
+                return (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    className={`nav-item ${isActive ? 'active' : ''}`}
+                  >
+                    <item.icon size={20} className="nav-item-icon" strokeWidth={isActive ? 2.5 : 2} />
+                    <span className="nav-item-label">{item.name}</span>
+                    {badge !== null && (
+                      <Badge count={badge} variant={isActive ? 'neutral' : (item.badgeKey === 'conflicts' ? 'danger' : 'neutral')} />
+                    )}
+                  </NavLink>
+                );
+              })}
+            </div>
+          ))}
         </nav>
 
-        {/* Agent Engine Status */}
-        <div className="agent-engine-card">
-          <div className="engine-header">
-            <span className="engine-label">AGENT ENGINE</span>
-            <span className="engine-status-pill">ACTIVE</span>
-          </div>
-          <div className="engine-metric">
-            <Activity size={14} className="engine-metric-icon" />
-            <span>94.8% success rate</span>
-          </div>
+        <div className="sidebar-upgrade">
+          <h4>Agent Pro</h4>
+          <p>Unlock voice SDRs and advanced custom reasoning engines.</p>
+          <button className="upgrade-btn">Upgrade to Pro</button>
         </div>
       </aside>
 
-      {/* ── Main Area ── */}
-      <main className="sdr-main">
-        {children}
-      </main>
+      {/* ── Main Area (includes Topbar) ── */}
+      <div className="sdr-main-wrapper">
+        {isKilled && <KillBanner />}
+
+        <header className="sdr-topbar">
+          <div className="topbar-right" style={{ marginLeft: 'auto' }}>
+            <div className="topbar-search">
+              <Search size={16} color="var(--text-muted)" />
+              <input type="text" placeholder="Search here..." />
+            </div>
+            
+            <button
+              type="button"
+              className={`btn ${isKilled ? 'btn--danger-solid' : 'btn--danger-outline'}`}
+              onClick={handleKillSwitch}
+              style={{ borderRadius: '999px', padding: '8px 16px', marginLeft: '8px' }}
+            >
+              {isKilled ? (
+                <><Play size={14} /> Resume</>
+              ) : (
+                <><OctagonX size={14} /> Stop Activity</>
+              )}
+            </button>
+
+            <button className="topbar-icon-btn">
+              <Bell size={20} />
+            </button>
+            <div className="topbar-profile">
+              <img src={`https://ui-avatars.com/api/?name=${user?.user_metadata?.full_name || 'User'}&background=05CD99&color=fff`} alt="Profile" />
+              <div className="topbar-profile-info">
+                <span className="topbar-profile-name">{user?.user_metadata?.full_name || 'Nishu'}</span>
+                <span className="topbar-profile-role">Admin SDR</span>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <main className="sdr-main">
+          {children}
+        </main>
+      </div>
+
+      {showKillConfirm && (
+        <ConfirmDialog
+          title="Stop all activity?"
+          message="This will immediately pause ALL campaigns, agents and outreach across every channel. No messages will be sent until you resume."
+          confirmLabel="Stop everything"
+          onConfirm={() => { toggleKillSwitch(true); setShowKillConfirm(false); }}
+          onCancel={() => setShowKillConfirm(false)}
+          variant="danger"
+        />
+      )}
     </div>
   );
 }
