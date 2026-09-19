@@ -459,6 +459,48 @@
   border: 1.5px solid var(--surface-bar);
 }
 
+/* ── Persistent Kill Switch Button ── */
+.topbar-kill-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  height: 34px;
+  border-radius: var(--radius-btn);
+  border: 1.5px solid var(--danger);
+  background: transparent;
+  color: var(--danger);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-default);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.topbar-kill-btn:hover {
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 20%, transparent);
+}
+
+.topbar-kill-btn--active {
+  background: var(--danger);
+  color: #fff;
+  animation: kill-pulse 1.8s ease-in-out infinite;
+}
+
+.topbar-kill-btn--active:hover {
+  background: var(--danger);
+  opacity: 0.9;
+}
+
+@keyframes kill-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--danger) 50%, transparent); }
+  50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--danger) 0%, transparent); }
+}
+
+
 /* Profile */
 .topbar-profile {
   display: flex;

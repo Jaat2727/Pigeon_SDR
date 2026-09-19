@@ -10,6 +10,9 @@ import promptsRoutes from './routes/prompts.js';
 import escalationsRoutes from './routes/escalations.js';
 import conflictsRoutes from './routes/conflicts.js';
 import costsRoutes from './routes/costs.js';
+import metricsRoutes from './routes/metrics.js';
+import activityRoutes from './routes/activity.js';
+import agentsRoutes from './routes/agents.js';
 
 const app = express();
 
@@ -32,6 +35,13 @@ app.use('/prompts', promptsRoutes);
 app.use('/escalations', escalationsRoutes);
 app.use('/conflicts', conflictsRoutes);
 app.use('/costs', costsRoutes);
+
+// New global routes (added for v2 redesign)
+app.use('/metrics', metricsRoutes);
+app.use('/activity', activityRoutes);
+app.use('/agents', agentsRoutes);
+// /attention alias reads from the same escalations table
+app.use('/attention', escalationsRoutes);
 
 const PORT = env.PORT || 3001;
 app.listen(PORT, () => {

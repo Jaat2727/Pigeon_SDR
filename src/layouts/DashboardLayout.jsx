@@ -3,8 +3,7 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Megaphone, Users, Bot, Phone, BarChart3,
   BookOpen, Plug, Settings, ChevronRight, Bell, Search,
-  MoreHorizontal, OctagonX, Play, ShieldAlert, PauseCircle,
-  Zap,
+  MoreHorizontal, OctagonX, Play, Zap,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { ConfirmDialog, KillBanner, Toast } from '../components/index.jsx';
@@ -20,6 +19,7 @@ const PRIMARY_NAV = [
       { name: 'All Campaigns', path: '/campaigns', exact: true },
       { name: 'Approvals', path: '/review-queue', badgeKey: 'review' },
       { name: 'Conflicts', path: '/conflicts', badgeKey: 'conflicts' },
+      { name: 'Prompts', path: '/prompts' },
     ]
   },
   { name: 'Prospects', path: '/prospects', icon: Users },
@@ -48,7 +48,8 @@ export default function DashboardLayout({ children, user }) {
   const [campaignsOpen, setCampaignsOpen] = useState(
     location.pathname.startsWith('/campaigns') ||
     location.pathname === '/review-queue' ||
-    location.pathname === '/conflicts'
+    location.pathname === '/conflicts' ||
+    location.pathname === '/prompts'
   );
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 
@@ -218,7 +219,26 @@ export default function DashboardLayout({ children, user }) {
               {(conflictsCount + escalationsCount) > 0 && <span className="notification-dot" />}
             </button>
 
-            {/* More / Emergency */}
+            {/* Global Kill Switch — persistent, always visible */}
+            <button
+              type="button"
+              className={`topbar-kill-btn ${isKilled ? 'topbar-kill-btn--active' : ''}`}
+              title={isKilled ? 'Resume all activity' : 'Global kill switch — stops everything'}
+              onClick={() => {
+                if (isKilled) {
+                  toggleKillSwitch(false);
+                } else {
+                  setShowKillConfirm(true);
+                }
+              }}
+            >
+              {isKilled
+                ? <><Play size={14} /> Resume</>  
+                : <><OctagonX size={14} /> Kill All</>
+              }
+            </button>
+
+            {/* More menu — Settings only */}
             <div className="more-menu-wrapper">
               <button
                 className="topbar-icon-btn"
@@ -227,47 +247,12 @@ export default function DashboardLayout({ children, user }) {
               >
                 <MoreHorizontal size={17} />
               </button>
-
               {moreMenuOpen && (
                 <div className="more-menu-dropdown" onClick={() => setMoreMenuOpen(false)}>
                   <button className="more-menu-item" onClick={() => navigate('/settings')}>
                     <Settings size={14} />
                     Settings
                   </button>
-                  <div className="more-menu-divider" />
-                  <div className="emergency-panel">
-                    <div className="emergency-panel-title">
-                      <ShieldAlert size={10} style={{ display: 'inline', marginRight: 4 }} />
-                      Emergency Controls
-                    </div>
-                    <button
-                      type="button"
-                      className="more-menu-item danger"
-                      style={{ borderRadius: 6, padding: '8px 10px' }}
-                      onClick={() => {
-                        setMoreMenuOpen(false);
-                        if (isKilled) {
-                          toggleKillSwitch(false);
-                        } else {
-                          setShowKillConfirm(true);
-                        }
-                      }}
-                    >
-                      {isKilled
-                        ? <><Play size={14} /> Resume all activity</>
-                        : <><OctagonX size={14} /> Global kill switch</>
-                      }
-                    </button>
-                    <button
-                      type="button"
-                      className="more-menu-item"
-                      style={{ borderRadius: 6, padding: '8px 10px', fontSize: 12 }}
-                      onClick={() => { setMoreMenuOpen(false); navigate('/agents'); }}
-                    >
-                      <PauseCircle size={14} />
-                      Pause all agents
-                    </button>
-                  </div>
                 </div>
               )}
             </div>

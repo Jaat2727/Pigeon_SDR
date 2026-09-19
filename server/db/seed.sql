@@ -322,3 +322,6 @@ INSERT INTO campaign_prospects (id, campaign_id, prospect_id, state, fit_score, 
 INSERT INTO prospects (id, first_name, last_name, email, title, company_name, provenance) VALUES ('00000000-0000-0000-0000-3_5300000000', 'Linda', 'Jackson', 'linda.jackson@example.com', 'VP Engineering', 'Initech', '{"role":"ai_enriched","company":"ai_enriched","email":"crm","title":"ai_enriched","phone":"crm"}'::jsonb) ON CONFLICT DO NOTHING;
 INSERT INTO campaign_prospects (id, campaign_id, prospect_id, state, fit_score, icp_verdict, icp_confidence, last_touch_at) VALUES ('00000000-0000-0000-0001-3_5300000000', '33333333-3333-3333-3333-333333333333', '00000000-0000-0000-0000-3_5300000000', 'engaged', 46, 'needs_review', 'low', '2026-09-15T14:34:08.299Z') ON CONFLICT DO NOTHING;
 
+
+-- Migration: add agent_pauses column (run manually in Supabase SQL editor if not present)
+ALTER TABLE system_control ADD COLUMN IF NOT EXISTS agent_pauses jsonb NOT NULL DEFAULT '{}'::jsonb;

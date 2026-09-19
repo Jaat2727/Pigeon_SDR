@@ -977,7 +977,7 @@ export const mockApi = {
       { name: 'Outreach Strategy Agent', key: 'outreach_strategy', engine: 'dronahq', runs_today: countFor('Outreach Strategy Agent') || 412, failures_today: failFor('Outreach Strategy Agent') || 8, enabled: camp?.agents?.outreach_strategy ?? true },
       { name: 'Personalisation Agent', key: 'personalisation', engine: 'dronahq', runs_today: countFor('Personalisation Agent') || 389, failures_today: failFor('Personalisation Agent') || 12, enabled: camp?.agents?.personalisation ?? true },
       { name: 'Conversation Agent', key: 'conversation', engine: 'dronahq', runs_today: countFor('Conversation Agent') || 127, failures_today: failFor('Conversation Agent') || 2, enabled: camp?.agents?.conversation ?? true },
-      { name: 'Follow-up Agent', key: 'followup_timing', engine: 'our_engine', runs_today: 203, failures_today: 0, enabled: camp?.agents?.followup_timing ?? true },
+      { name: 'Follow-up Timing Agent', key: 'followup_timing', engine: 'our_engine', runs_today: 203, failures_today: 0, enabled: camp?.agents?.followup_timing ?? true },
       { name: 'Voice SDR Agent', key: 'voice_sdr', engine: 'dronahq', runs_today: 14, failures_today: 1, enabled: camp?.agents?.voice_sdr ?? false },
     ];
   },
