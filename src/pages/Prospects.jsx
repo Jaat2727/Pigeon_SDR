@@ -38,9 +38,6 @@ export default function Prospects() {
     return () => { mounted = false; };
   }, [campaignFilter]);
 
-  if (loading) return <LoadingState message="Loading prospects..." />;
-  if (error) return <ErrorState message={error} onRetry={() => window.location.reload()} />;
-
   const getCampaignName = (id) => campaigns.find(c => c.id === id)?.name || id;
 
   const handleSort = (field) => {
@@ -98,6 +95,9 @@ export default function Prospects() {
     campaignFilter ? getCampaignName(campaignFilter) : null,
     statusFilter ? `Stage: ${statusFilter}` : null,
   ].filter(Boolean).join(' · ');
+
+  if (loading) return <LoadingState message="Loading prospects..." />;
+  if (error) return <ErrorState message={error} onRetry={() => window.location.reload()} />;
 
   return (
     <div className="page animate-in">
