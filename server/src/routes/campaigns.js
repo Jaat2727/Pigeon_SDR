@@ -1,5 +1,6 @@
 import express from 'express';
 import { supabase } from '../db/client.js';
+import { AGENT_REGISTRY } from '../agents/registry.js';
 
 const router = express.Router();
 
@@ -87,7 +88,7 @@ router.get('/:id/metrics', async (req, res) => {
   const { data: runs } = await supabase.from('agent_runs').select('cost_usd, latency_ms, status').eq('campaign_id', id);
   const rs = runs || [];
   const spend = rs.reduce((s, r) => s + parseFloat(r.cost_usd || 0), 0);
-  const failures = rs.filter(r => r.status === 'failed').length;
+  const failures = rs.filter(r => r.status === 'error').length;
   const successRate = rs.length > 0 ? Math.round(((rs.length - failures) / rs.length) * 100) : 97;
   
   // Get escalations count
@@ -150,24 +151,15 @@ router.get('/:id/agents', async (req, res) => {
   // Get agent run stats for this campaign
   const { data: runs } = await supabase.from('agent_runs').select('agent_name, status').eq('campaign_id', id);
   const rs = runs || [];
+  const countFor = (id) => rs.filter(r => r.agent_name === id).length;
+  const failFor = (id) => rs.filter(r => r.agent_name === id && r.status === 'error').length;
   
-  const countFor = (name) => rs.filter(r => r.agent_name === name).length;
-  const failFor = (name) => rs.filter(r => r.agent_name === name && r.status === 'failed').length;
-  
-  // Canonical agents with per-campaign enable state
-  const agents = [
-    { name: 'Lead Research Agent', key: 'research', engine: 'dronahq' },
-    { name: 'ICP Fitment Agent', key: 'icp_fitment', engine: 'dronahq' },
-    { name: 'Outreach Strategy Agent', key: 'outreach_strategy', engine: 'dronahq' },
-    { name: 'Personalisation Agent', key: 'personalisation', engine: 'dronahq' },
-    { name: 'Conversation Agent', key: 'conversation', engine: 'dronahq' },
-    { name: 'Follow-up Timing Agent', key: 'followup_timing', engine: 'our_engine' },
-    { name: 'Voice SDR Agent', key: 'voice_sdr', engine: 'dronahq' },
-  ].map(a => ({
-    ...a,
-    runs_today: countFor(a.name),
-    failures_today: failFor(a.name),
-    enabled: campAgents[a.key] ?? true,
+  const agents = AGENT_REGISTRY.map(a => ({
+    name: a.display,
+    key: a.id,
+    runs_today: countFor(a.id),
+    failures_today: failFor(a.id),
+    enabled: campAgents[a.id] ?? true
   }));
   
   res.json(agents);

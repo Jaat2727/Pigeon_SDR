@@ -6,11 +6,11 @@ import { LoadingState, ErrorState } from '../components/index.jsx';
 import './Prompts.css';
 
 const AGENT_TABS = [
-  'System Prompt',
-  'Research Agent',
-  'ICP Agent',
-  'Personalisation Agent',
-  'Conversation Agent',
+  { id: 'system', label: 'System Prompt' },
+  { id: 'research', label: 'Research Agent' },
+  { id: 'icp_fitment', label: 'ICP Agent' },
+  { id: 'personalisation', label: 'Personalisation Agent' },
+  { id: 'conversation', label: 'Conversation Agent' },
 ];
 
 const STATUS_LABELS = {
@@ -22,7 +22,7 @@ const STATUS_LABELS = {
 
 export default function Prompts() {
   const { campaigns } = useApp();
-  const [activeTab, setActiveTab] = useState('System Prompt');
+  const [activeTab, setActiveTab] = useState('system');
   const [allVersions, setAllVersions] = useState([]); // all versions for current campaign
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -139,7 +139,7 @@ export default function Prompts() {
   // Count versions per tab
   const tabCounts = {};
   AGENT_TABS.forEach(tab => {
-    tabCounts[tab] = allVersions.filter(v => v.agent_name === tab).length;
+    tabCounts[tab.id] = allVersions.filter(v => v.agent_name === tab.id).length;
   });
 
   return (
@@ -177,13 +177,13 @@ export default function Prompts() {
       <div className="prompts-tabs">
         {AGENT_TABS.map(tab => (
           <button
-            key={tab}
-            className={`prompts-tab ${activeTab === tab ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab)}
+            key={tab.id}
+            className={`prompts-tab ${activeTab === tab.id ? 'active' : ''}`}
+            onClick={() => setActiveTab(tab.id)}
           >
-            {tab}
-            {tabCounts[tab] > 0 && (
-              <span style={{ marginLeft: '6px', fontSize: '10px', opacity: 0.7 }}>({tabCounts[tab]})</span>
+            {tab.label}
+            {tabCounts[tab.id] > 0 && (
+              <span style={{ marginLeft: '6px', fontSize: '10px', opacity: 0.7 }}>({tabCounts[tab.id]})</span>
             )}
           </button>
         ))}
@@ -193,7 +193,7 @@ export default function Prompts() {
       <div className="prompts-body">
         {/* Left — Version History */}
         <div>
-          <div className="prompts-history-title">Version History — {activeTab}</div>
+          <div className="prompts-history-title">Version History — {AGENT_TABS.find(t => t.id === activeTab)?.label}</div>
           <div className="prompts-history-list">
             {versions.length === 0 ? (
               <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>

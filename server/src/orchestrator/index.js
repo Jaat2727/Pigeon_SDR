@@ -1,60 +1,29 @@
 import { supabase } from '../db/client.js';
-import { callAgentAsync } from '../agents/client.js';
+import { callAgent } from '../agents/client.js';
+import { isActionAllowed } from './gate.js';
 
 /**
  * Orchestrator pipeline logic.
- * Triggered by the worker for new/progressing prospects, or by the callback when an agent finishes.
+ * Triggered by the worker for new/progressing prospects.
  */
 export async function advance(campaign_id, prospect_id, previousOutput = null) {
   // 1. Fetch the prospect and its state
-  const { data: cpData, error: cpErr } = await supabase
+  const { data: cp, error: cpErr } = await supabase
     .from('campaign_prospects')
     .select('*, campaigns(*), prospects(*)')
     .eq('campaign_id', campaign_id)
     .eq('prospect_id', prospect_id)
     .single();
 
-  if (cpErr || !cpData) {
+  if (cpErr || !cp) {
     console.error(`advance() failed: Prospect not found`, cpErr);
     return;
   }
 
-  const cp = cpData;
-
-  // 2. Guards
-  // Check global kill switch
-  const { data: systemControl } = await supabase.from('system_control').select('*').single();
-  if (systemControl && systemControl.kill_switch_active) {
-    console.log('Orchestrator paused: global kill switch active');
-    return;
-  }
-  // Check campaign status
-  if (cp.campaigns?.status === 'paused' || cp.campaigns?.status === 'draft') {
-    console.log(`Orchestrator paused: campaign ${campaign_id} is ${cp.campaigns?.status}`);
-    return;
-  }
-  // Check pending calls
-  if (cp.pending_agent_call) {
-    console.log(`advance() skipped: Prospect already has a pending call for ${cp.pending_agent_call}`);
-    return;
-  }
-
-  // Check global rate limit
-  const maxCalls = parseInt(process.env.MAX_AGENT_CALLS_PER_DAY || '20', 10);
-  const startOfDay = new Date();
-  startOfDay.setUTCHours(0, 0, 0, 0);
-
-  const { count: runsToday, error: countErr } = await supabase
-    .from('agent_runs')
-    .select('*', { count: 'exact', head: true })
-    .gte('created_at', startOfDay.toISOString());
-
-  if (countErr) {
-    console.error('Failed to check rate limit:', countErr);
-    return;
-  }
-  if (runsToday >= maxCalls) {
-    console.warn(`Worker refuses: daily agent call limit reached (${runsToday}/${maxCalls})`);
+  // 2. Guards using gate.js
+  const gate = await isActionAllowed(campaign_id, prospect_id, null);
+  if (!gate.allowed) {
+    console.log(`Orchestrator paused: ${gate.reason}`);
     return;
   }
 
@@ -65,17 +34,10 @@ export async function advance(campaign_id, prospect_id, previousOutput = null) {
   if (cp.state === 'discovered') {
     if (cp.prospects.enriched_data && Object.keys(cp.prospects.enriched_data).length > 0) {
       console.log(`advance(): Prospect ${prospect_id} already enriched, skipping research.`);
-      
-      // Update state locally and in DB, then recurse
-      const { error: stateErr } = await supabase.from('campaign_prospects')
+      await supabase.from('campaign_prospects')
         .update({ state: 'researched' })
         .eq('campaign_id', campaign_id)
         .eq('prospect_id', prospect_id);
-        
-      if (stateErr) {
-        console.error('Failed to update state for enrichment cache:', stateErr);
-        return;
-      }
       return advance(campaign_id, prospect_id, previousOutput);
     }
     
@@ -85,8 +47,6 @@ export async function advance(campaign_id, prospect_id, previousOutput = null) {
       campaign: { research_focus: cp.campaigns?.research_focus || '' }
     };
   } else if (cp.state === 'researched') {
-    // We assume the previous output (from research) updated the prospect, 
-    // but we'll fetch latest prospect data
     nextAgent = 'icp_fitment';
     payload = {
       prospect: { enriched_profile: cp.prospects.enriched_data || cp.prospects },
@@ -101,29 +61,39 @@ export async function advance(campaign_id, prospect_id, previousOutput = null) {
     payload = {
       prospect: {
         enriched_profile: cp.prospects.enriched_data || cp.prospects,
-        icp_result: cp.icp_result || previousOutput, // Use previousOutput if just qualified
+        icp_result: cp.icp_result || previousOutput || {},
         contact_history: []
       },
       campaign: {
         outreach_policy: cp.campaigns?.outreach_policy || '',
-        enabled_channels: cp.campaigns?.enabled_channels || []
+        enabled_channels: cp.campaigns?.enabled_channels?.length > 0 ? cp.campaigns.enabled_channels : (cp.campaigns?.channels || [])
       }
     };
   } else if (cp.state === 'strategy_planned') {
-    // Next step is to actually send via personalisation
     nextAgent = 'personalisation';
+    const channels = cp.campaigns?.enabled_channels?.length > 0 ? cp.campaigns.enabled_channels : (cp.campaigns?.channels || []);
+    
+    const channelGate = await isActionAllowed(campaign_id, prospect_id, channels[0] || 'email');
+    if (!channelGate.allowed) {
+      console.log(`Orchestrator paused for channel: ${channelGate.reason}`);
+      return;
+    }
+    
+    // Fetch knowledge chunks
+    const { data: chunks } = await supabase.from('knowledge_chunks').select('*').eq('campaign_id', campaign_id);
+    
     payload = {
       prospect: {
         enriched_profile: cp.prospects.enriched_data || cp.prospects,
         thread_history: []
       },
       outreach: {
-        current_step: cp.next_outreach_step || {}
+        current_step: cp.outreach_plan ? cp.outreach_plan[cp.current_step] || {} : {}
       },
       campaign: {
         messaging_policy: cp.campaigns?.messaging_policy || ''
       },
-      retrieved_knowledge: [],
+      retrieved_knowledge: chunks || [],
       rep: { identity: 'System' }
     };
   } else if (cp.state === 'replied') {
@@ -137,39 +107,51 @@ export async function advance(campaign_id, prospect_id, previousOutput = null) {
       campaign: { objective_and_policy: cp.campaigns?.messaging_policy || '' }
     };
   } else {
-    // Terminal state or unknown
     console.log(`No next action for prospect ${prospect_id} in state ${cp.state}`);
     return;
   }
 
-  // 4. Duplicate Run Prevention
-  const { data: existingRuns, error: dupErr } = await supabase.from('agent_runs')
-    .select('id')
-    .eq('campaign_id', campaign_id)
-    .eq('prospect_id', prospect_id)
-    .eq('agent_name', nextAgent)
-    .eq('status', 'success');
-  
-  if (dupErr) {
-    console.error('Failed to check for duplicate runs:', dupErr);
-    return;
-  }
-  if (existingRuns && existingRuns.length > 0) {
-    console.log(`advance(): Prospect ${prospect_id} already has a completed ${nextAgent} run, skipping to prevent duplicates.`);
-    return;
+  // 4. Duplicate Run Prevention (except for personalisation which can run multiple times for steps)
+  if (nextAgent !== 'personalisation') {
+    const { data: existingRuns } = await supabase.from('agent_runs')
+      .select('id')
+      .eq('campaign_id', campaign_id)
+      .eq('prospect_id', prospect_id)
+      .eq('agent_name', nextAgent)
+      .eq('status', 'success');
+    
+    if (existingRuns && existingRuns.length > 0) {
+      console.log(`advance(): Prospect already has a completed ${nextAgent} run, skipping to prevent duplicates.`);
+      return;
+    }
   }
 
-  // 5. Fire agent
+  // 5. Fetch Prompt Version ID
+  let prompt_version_id = null;
+  const { data: prompt } = await supabase.from('prompt_versions')
+    .select('id, content')
+    .eq('campaign_id', campaign_id)
+    .eq('agent_name', nextAgent)
+    .eq('is_active', true)
+    .single();
+    
+  if (prompt) {
+    prompt_version_id = prompt.id;
+    payload.prompt_instructions = prompt.content;
+  }
+
+  // 6. Fire agent synchronously
   try {
     const result = await callAgent(nextAgent, payload, { 
       campaign_id, 
       prospect_id, 
-      prompt_version_id: cp.campaigns?.active_prompt_version_id 
+      prompt_version_id 
     });
     
     if (result.success && result.parsedOutput) {
-      // Determine next state
       let nextState = cp.state;
+      let updates = {};
+
       if (nextAgent === 'research') {
         nextState = 'researched';
         const flat = result.parsedOutput;
@@ -183,22 +165,16 @@ export async function advance(campaign_id, prospect_id, previousOutput = null) {
             timezone: flat.timezone,
             linkedin_url: flat.linkedin_url,
             email: flat.email,
-            email_status: flat.email_status,
             phone: flat.phone,
-            phone_type: flat.phone_type,
             tenure_months: flat.tenure_months,
             recent_activity: flat.recent_activity,
-            previous_companies: []
           },
           company: {
             name: flat.company_name,
             domain: flat.company_domain,
             industry: flat.company_industry,
-            sub_industry: flat.company_sub_industry,
             employee_count: flat.company_employee_count,
-            hq_location: flat.company_hq_location,
             funding_stage: flat.company_funding_stage,
-            last_funding_date: flat.company_last_funding_date,
             description: flat.company_description
           },
           signals: {
@@ -211,33 +187,71 @@ export async function advance(campaign_id, prospect_id, previousOutput = null) {
           confidence: flat.confidence,
           fields_not_found: flat.fields_not_found || []
         };
-        await supabase.from('prospects').update({ enriched_data: nestedEnriched }).eq('id', prospect_id);
+        await supabase.from('prospects').update({ enriched_data: nestedEnriched, enriched_at: new Date().toISOString() }).eq('id', prospect_id);
       }
       else if (nextAgent === 'icp_fitment') {
         const v = result.parsedOutput.verdict;
         if (v === 'qualify') nextState = 'qualified';
         else if (v === 'reject') nextState = 'rejected';
         else nextState = 'needs_review';
+        updates.icp_result = result.parsedOutput;
+        updates.icp_verdict = v;
+        updates.icp_confidence = result.parsedOutput.confidence;
+        updates.fit_score = result.parsedOutput.fit_score;
       }
-      else if (nextAgent === 'outreach_strategy') nextState = 'strategy_planned';
-      else if (nextAgent === 'personalisation') nextState = 'contacted';
+      else if (nextAgent === 'outreach_strategy') {
+        nextState = 'strategy_planned';
+        updates.outreach_plan = result.parsedOutput.sequence;
+        updates.current_step = 0;
+      }
+      else if (nextAgent === 'personalisation') {
+        nextState = 'contacted';
+        
+        // Write message
+        await supabase.from('messages').insert({
+          campaign_id,
+          prospect_id,
+          campaign_prospect_id: cp.id,
+          direction: 'outbound',
+          channel: result.parsedOutput.channel,
+          step_number: cp.current_step,
+          subject: result.parsedOutput.subject,
+          body: result.parsedOutput.body,
+          personalisation_used: result.parsedOutput.personalisation_used,
+          knowledge_used: result.parsedOutput.knowledge_used,
+          cta: result.parsedOutput.cta,
+          needs_human: result.parsedOutput.needs_human,
+          needs_human_reason: result.parsedOutput.needs_human_reason,
+          prompt_version_id
+        });
+        
+        // Record activity
+        await supabase.from('activities').insert({
+          campaign_id,
+          prospect_id,
+          agent_name: 'personalisation',
+          action: `Sent ${result.parsedOutput.channel} message`,
+          status: 'completed',
+          metadata: { step: cp.current_step, subject: result.parsedOutput.subject }
+        });
+      }
       else if (nextAgent === 'conversation') {
-         // This depends on the output of conversation agent, maybe meeting_booked, replied, etc.
-         nextState = 'replied'; // Keep it or map it further based on intent
+         const intent = result.parsedOutput.intent;
+         if (['interested', 'meeting_request'].includes(intent)) nextState = 'opportunity';
+         else if (['not_now', 'not_interested', 'opt_out'].includes(intent)) nextState = 'rejected';
+         else nextState = 'replied'; 
       }
 
-      // Update state
-      if (nextState !== cp.state) {
-        await supabase.from('campaign_prospects')
-          .update({ state: nextState, last_touch_at: new Date().toISOString() })
-          .eq('campaign_id', campaign_id)
-          .eq('prospect_id', prospect_id);
-      }
+      updates.state = nextState;
+      updates.last_touch_at = new Date().toISOString();
+      updates.next_action_at = new Date(Date.now() + 86400000).toISOString();
       
-      // We could optionally recurse to fire the next agent immediately, but we will let the worker pick it up 
-      // on the next tick to pace API calls naturally.
+      await supabase.from('campaign_prospects')
+        .update(updates)
+        .eq('campaign_id', campaign_id)
+        .eq('prospect_id', prospect_id);
     }
   } catch (err) {
-    console.error(`advance() failed to start agent ${nextAgent}:`, err);
+    console.error(`advance() failed to run agent ${nextAgent}:`, err);
   }
 }

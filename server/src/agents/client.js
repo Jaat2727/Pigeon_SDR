@@ -125,9 +125,15 @@ function tryParseJSON(rawStr) {
   try {
     return JSON.parse(rawStr);
   } catch (e) {
-    const match = rawStr.match(/```json\n([\s\S]*?)\n```/);
+    // Strip ```json or bare ``` fences
+    let match = rawStr.match(/```(?:json)?\n([\s\S]*?)\n```/);
     if (match) {
       try { return JSON.parse(match[1]); } catch (e2) {}
+    }
+    // Fall back to first {...} block
+    match = rawStr.match(/\{[\s\S]*\}/);
+    if (match) {
+      try { return JSON.parse(match[0]); } catch (e3) {}
     }
     throw e;
   }
@@ -170,12 +176,26 @@ export async function callAgent(agentName, payload, meta = {}, retries = 1) {
     }
 
     const data = await res.json();
-    if (!data.success || !data.response) {
+    
+    // Hard-fail loudly if the agent is still configured fire-and-forget.
+    if (data && data.run_id && data.thread_id && data.response === undefined) {
+      throw new Error(
+        `DRONAHQ_ASYNC_ACK: agent "${agentName}" returned a background-run ` +
+        `acknowledgement, not output. Fix in DronaHQ: open this agent's ` +
+        `Webhook trigger, Step 7 Configure Response, set it to "Standard" and ` +
+        `paste the output JSON Schema. No code change will fix this.`
+      );
+    }
+
+    if (!data.success && data.error) {
       throw new Error(`Agent failed. Response: ${JSON.stringify(data)}`);
     }
 
-    rawOutput = data.response;
-    const parsed = tryParseJSON(rawOutput);
+    // The useful payload may sit in any of these. Try in order.
+    const raw = data?.response ?? data?.output ?? data?.result ?? data?.data ?? data;
+    rawOutput = raw;
+    
+    const parsed = typeof raw === 'string' ? tryParseJSON(raw) : raw;
     const validated = schema.safeParse(parsed);
     
     if (!validated.success) {
@@ -216,7 +236,7 @@ export async function callAgent(agentName, payload, meta = {}, retries = 1) {
   }
 
   // Retry once on error
-  if (status === 'error' && retries > 0) {
+  if (status === 'error' && retries > 0 && !validationError?.includes('DRONAHQ_ASYNC_ACK')) {
     console.log(`[${agentName}] Attempt failed, retrying... Error: ${validationError}`);
     return callAgent(agentName, payload, { ...meta, errorFeedback: `Previous attempt failed: ${validationError}` }, retries - 1);
   }
@@ -229,8 +249,8 @@ export async function callAgent(agentName, payload, meta = {}, retries = 1) {
       prospect_id: meta.prospect_id,
       prompt_version_id: meta.prompt_version_id || null,
       agent_name: agentName,
-      input_data: payload,
-      output_data: parsedOutput,
+      input_payload: payload,
+      output_payload: parsedOutput,
       status,
       latency_ms: latencyMs
     });
