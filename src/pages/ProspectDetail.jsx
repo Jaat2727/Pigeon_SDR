@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, User, Building, Mail, CheckCircle, AlertTriangle, Eye, EyeOff, Bot, Database } from 'lucide-react';
+import { ArrowLeft, User, Building, Mail, Eye, EyeOff, Bot, Database } from 'lucide-react';
 import api from '../api/index.js';
 import { LoadingState, ErrorState, StatusPill, EngineBadge, ProvenanceTag } from '../components/index.jsx';
 import './ProspectDetail.css';
@@ -55,9 +55,18 @@ export default function ProspectDetail() {
               </div>
               <h2 className="profile-name">{prospect.first_name} {prospect.last_name}</h2>
               <div className="profile-meta">
-                <span><User size={14}/> {prospect.role}</span>
-                <span><Building size={14}/> {prospect.company}</span>
-                <span><Mail size={14}/> {prospect.email}</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <User size={14}/> {prospect.role}
+                  {prospect.provenance?.role && <ProvenanceTag source={prospect.provenance.role} />}
+                </span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Building size={14}/> {prospect.company}
+                  {prospect.provenance?.company && <ProvenanceTag source={prospect.provenance.company} />}
+                </span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Mail size={14}/> {prospect.email}
+                  {prospect.provenance?.email && <ProvenanceTag source={prospect.provenance.email} />}
+                </span>
               </div>
             </div>
             
@@ -65,7 +74,7 @@ export default function ProspectDetail() {
               <div className="profile-section-title">Campaign</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span className="campaign-dot" style={{ background: prospect.campaign_colour || 'var(--accent)', width: 10, height: 10, borderRadius: '50%' }} />
-                <strong>{prospect.campaign_id}</strong>
+                <strong>{prospect.campaign_name || prospect.campaign_id}</strong>
               </div>
             </div>
 
@@ -74,10 +83,25 @@ export default function ProspectDetail() {
               {prospect.icp_verdict ? (
                 <div className="icp-verdict">
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                    <StatusPill status={prospect.icp_verdict.status === 'qualify' ? 'live' : prospect.icp_verdict.status === 'reject' ? 'stopped' : 'paused'} />
+                    <StatusPill status={prospect.icp_verdict.status} />
                     <span className="font-mono text-sm font-bold" style={{ fontSize: '12px' }}>Score: {prospect.icp_verdict.fit_score}</span>
                   </div>
+                  {prospect.icp_verdict.confidence && (
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                      Confidence: <strong style={{ textTransform: 'capitalize' }}>{prospect.icp_verdict.confidence}</strong>
+                    </div>
+                  )}
                   <p className="icp-reason">{prospect.icp_verdict.reasoning}</p>
+                  {prospect.icp_verdict.missing_data?.length > 0 && (
+                    <div style={{ marginTop: '8px', fontSize: '11px', color: '#E65100' }}>
+                      Missing: {prospect.icp_verdict.missing_data.join(', ')}
+                    </div>
+                  )}
+                  {prospect.icp_verdict.disqualifiers?.length > 0 && (
+                    <div style={{ marginTop: '8px', fontSize: '11px', color: 'var(--danger)' }}>
+                      Disqualifiers: {prospect.icp_verdict.disqualifiers.join(', ')}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <span className="text-muted text-sm">No verdict yet</span>
@@ -121,8 +145,13 @@ export default function ProspectDetail() {
                     <div className="timeline-header">
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <strong className="timeline-agent">{event.agent}</strong>
-                          <EngineBadge engine={event.agent_engine} />
+                          <strong className="timeline-agent">{event.agent || 'System'}</strong>
+                          {event.agent_engine && <EngineBadge engine={event.agent_engine} />}
+                          {event.prompt_version && (
+                            <span style={{ fontSize: '10px', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', background: 'var(--border-subtle)', padding: '2px 6px', borderRadius: '4px' }}>
+                              {event.prompt_version}
+                            </span>
+                          )}
                         </div>
                         <span className="timeline-time font-mono">{new Date(event.timestamp).toLocaleString()}</span>
                       </div>
@@ -131,7 +160,7 @@ export default function ProspectDetail() {
                         <div className="timeline-metrics font-mono">
                           <span>Tokens: {event.tokens_used}</span>
                           <span style={{ color: 'var(--text-muted)' }}>|</span>
-                          <span>Cost: ${event.cost.toFixed(4)}</span>
+                          <span>Cost: ${event.cost?.toFixed(4) || '0.0000'}</span>
                         </div>
                       )}
                     </div>
@@ -143,14 +172,16 @@ export default function ProspectDetail() {
                         </span>
                       </div>
                       
-                      {/* Event Specific Details */}
+                      {/* Verdict details */}
                       {event.details?.verdict && (
                         <div style={{ marginTop: '8px', fontSize: '13px' }}>
-                          <strong>Verdict: </strong> <span style={{ textTransform: 'capitalize' }}>{event.details.verdict}</span> 
-                          {event.details.reason && <span> — {event.details.reason}</span>}
+                          <strong>Verdict: </strong>
+                          <StatusPill status={event.details.verdict} />
+                          {event.details.reason && <p style={{ marginTop: '4px', fontSize: '12px', color: 'var(--text-secondary)' }}>{event.details.reason}</p>}
                         </div>
                       )}
                       
+                      {/* Reply */}
                       {event.details?.reply_text && (
                         <div className="timeline-reply" style={{ marginTop: '8px' }}>
                           <strong>Prospect Reply:</strong>
@@ -161,6 +192,7 @@ export default function ProspectDetail() {
                         </div>
                       )}
 
+                      {/* Sent message */}
                       {event.details?.message_text && (
                         <div style={{ marginTop: '12px' }}>
                           <button 
@@ -180,6 +212,7 @@ export default function ProspectDetail() {
                         </div>
                       )}
 
+                      {/* Knowledge chunks */}
                       {event.knowledge_chunks?.length > 0 && (
                         <div className="timeline-knowledge" style={{ marginTop: '12px' }}>
                           <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Knowledge Used:</span>

@@ -8,7 +8,10 @@ import './components.css';
 
 // ── Status Pill ──
 export function StatusPill({ status }) {
-  const labels = { live: 'Live', paused: 'Paused', draft: 'Draft', stopped: 'Stopped' };
+  const labels = {
+    live: 'Live', paused: 'Paused', draft: 'Draft', stopped: 'Stopped',
+    qualify: 'Qualified', reject: 'Rejected', needs_review: 'Needs Review',
+  };
   return (
     <span className={`status-pill status-pill--${status}`}>
       <span className="status-pill__dot" />

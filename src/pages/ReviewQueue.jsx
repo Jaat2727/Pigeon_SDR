@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Check, X, Edit2, AlertCircle, Save } from 'lucide-react';
 import api from '../api/index.js';
-import { LoadingState, ErrorState, EngineBadge } from '../components/index.jsx';
+import { LoadingState, ErrorState, EngineBadge, StatusPill } from '../components/index.jsx';
 import './ReviewQueue.css';
 
 export default function ReviewQueue() {
@@ -20,8 +20,6 @@ export default function ReviewQueue() {
     setError(null);
     try {
       const data = await api.getEscalations();
-      // Enhance with basic prospect/campaign info if not present in mock, but the mock just has IDs.
-      // For a real app we'd fetch details or they'd be populated in the API.
       setEscalations(data);
     } catch (err) {
       setError(err.message || 'Failed to load review queue');
@@ -32,10 +30,8 @@ export default function ReviewQueue() {
 
   useEffect(() => { loadQueue(); }, [loadQueue]);
 
-  const handleAction = async (id, actionStr, newValue = null) => {
+  const handleAction = async (id, actionStr) => {
     try {
-      // If we're approving an edited version, we theoretically send the newValue to the API.
-      // In the mock, we just resolve it.
       await api.resolveEscalation(id, actionStr);
       setEditingId(null);
       setEditValue('');
@@ -64,7 +60,7 @@ export default function ReviewQueue() {
 
       {escalations.length === 0 ? (
         <div className="card">
-          <div className="card__body text-center py-10" style={{ color: 'var(--text-muted)' }}>
+          <div className="card__body text-center py-10" style={{ color: 'var(--text-muted)', padding: '60px', textAlign: 'center' }}>
             <AlertCircle size={32} style={{ margin: '0 auto var(--sp-3)', opacity: 0.5 }} />
             <p>The queue is empty. All agents are operating autonomously.</p>
           </div>
@@ -77,16 +73,24 @@ export default function ReviewQueue() {
             return (
               <div key={esc.id} className="card escalation-card">
                 <div className="escalation-header">
-                  <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2">
-                      <span className="escalation-reason">{esc.reason.replace(/_/g, ' ')}</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <StatusPill status={esc.escalation_type || esc.reason} />
                       <EngineBadge engine="dronahq" />
-                      <strong className="text-primary text-sm">{esc.source_agent}</strong>
+                      <strong style={{ color: 'var(--text-primary)', fontSize: '14px' }}>{esc.source_agent}</strong>
                     </div>
                     <div className="escalation-meta">
-                      <span>Campaign: <strong>{esc.campaign_id}</strong></span>
-                      <span className="text-muted">|</span>
-                      <span>Prospect: <strong className="cursor-pointer hover-accent" onClick={() => navigate(`/prospects/${esc.prospect_id}`)}>{esc.prospect_id}</strong></span>
+                      <span>Campaign: <strong>{esc.campaign_name || esc.campaign_id}</strong></span>
+                      <span style={{ color: 'var(--text-muted)' }}>|</span>
+                      <span>
+                        Prospect:{' '}
+                        <strong
+                          style={{ cursor: 'pointer', color: 'var(--accent)' }}
+                          onClick={() => navigate(`/prospects/${esc.prospect_id}`)}
+                        >
+                          {esc.prospect_name || esc.prospect_id}
+                        </strong>
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -102,7 +106,7 @@ export default function ReviewQueue() {
                       autoFocus
                     />
                   ) : (
-                    <div className="escalation-content">
+                    <div className="escalation-content" style={{ whiteSpace: 'pre-wrap' }}>
                       {esc.proposed_action}
                     </div>
                   )}
@@ -117,14 +121,14 @@ export default function ReviewQueue() {
                     <X size={16} /> Reject
                   </button>
                   
-                  <div className="flex gap-3">
+                  <div style={{ display: 'flex', gap: '12px' }}>
                     {isEditing ? (
                       <>
                         <button type="button" className="btn btn--ghost" onClick={() => setEditingId(null)}>Cancel</button>
                         <button 
                           type="button" 
                           className="btn btn--success"
-                          onClick={() => handleAction(esc.id, 'approved', editValue)}
+                          onClick={() => handleAction(esc.id, 'approved')}
                         >
                           <Save size={16} /> Save & Approve
                         </button>
@@ -141,7 +145,7 @@ export default function ReviewQueue() {
                         <button 
                           type="button" 
                           className="btn btn--success"
-                          onClick={() => handleAction(esc.id, 'approved', esc.proposed_action)}
+                          onClick={() => handleAction(esc.id, 'approved')}
                         >
                           <Check size={16} /> Approve
                         </button>

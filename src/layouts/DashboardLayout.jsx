@@ -39,6 +39,8 @@ export default function DashboardLayout({ children, user }) {
   const {
     isKilled, toggleKillSwitch,
     campaigns, conflictsCount,
+    escalationsCount, prospectsCount,
+    liveCampaignCount, dailyCosts,
   } = useApp();
 
   const [showKillConfirm, setShowKillConfirm] = useState(false);
@@ -54,14 +56,12 @@ export default function DashboardLayout({ children, user }) {
   const getBadge = (key) => {
     switch (key) {
       case 'campaigns': return campaigns.length || null;
+      case 'prospects': return prospectsCount || null;
       case 'conflicts': return conflictsCount || null;
-      case 'review': return 2; /* Mocked count for now */
+      case 'review': return escalationsCount || null;
       default: return null;
     }
   };
-
-  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-  const pageTitle = NAV_ITEMS.flatMap(g => g.items).find(i => location.pathname.startsWith(i.path))?.name || 'Dashboard';
 
   return (
     <div className="sdr-shell">
@@ -90,7 +90,7 @@ export default function DashboardLayout({ children, user }) {
                     <item.icon size={20} className="nav-item-icon" strokeWidth={isActive ? 2.5 : 2} />
                     <span className="nav-item-label">{item.name}</span>
                     {badge !== null && (
-                      <Badge count={badge} variant={isActive ? 'neutral' : (item.badgeKey === 'conflicts' ? 'danger' : 'neutral')} />
+                      <Badge count={badge} variant={isActive ? 'neutral' : (item.badgeKey === 'conflicts' || item.badgeKey === 'review' ? 'danger' : 'neutral')} />
                     )}
                   </NavLink>
                 );
@@ -117,6 +117,22 @@ export default function DashboardLayout({ children, user }) {
 
         <header className="sdr-topbar">
           <div className="topbar-right" style={{ marginLeft: 'auto' }}>
+            {/* Live campaign pill */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              padding: '6px 14px', borderRadius: '999px',
+              background: liveCampaignCount > 0 ? 'var(--success-soft)' : 'var(--border-subtle)',
+              color: liveCampaignCount > 0 ? 'var(--success)' : 'var(--text-muted)',
+              fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-title)',
+              letterSpacing: '0.03em', textTransform: 'uppercase',
+            }}>
+              <div style={{
+                width: '7px', height: '7px', borderRadius: '50%', background: 'currentColor',
+                animation: liveCampaignCount > 0 ? 'pulse-dot 2s ease-in-out infinite' : 'none',
+              }} />
+              {liveCampaignCount} Live Campaign{liveCampaignCount !== 1 ? 's' : ''}
+            </div>
+
             <div className="topbar-search">
               <Search size={16} color="var(--text-muted)" />
               <input type="text" placeholder="Search here..." />
@@ -152,7 +168,7 @@ export default function DashboardLayout({ children, user }) {
           {children}
         </main>
         
-        {/* Sticky Status Strip */}
+        {/* Sticky Status Strip — computed from API */}
         <div style={{ 
           height: '32px', 
           background: 'var(--surface-bar)', 
@@ -168,13 +184,14 @@ export default function DashboardLayout({ children, user }) {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--success)' }}></div>
-              System Normal
+              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: isKilled ? 'var(--danger)' : 'var(--success)' }}></div>
+              {isKilled ? 'System Stopped' : 'System Normal'}
             </span>
-            <span>API Latency: 124ms</span>
+            <span>API Latency: {dailyCosts.avg_latency_ms || 0}ms</span>
+            <span>Agent Runs: {dailyCosts.total_runs || 0}</span>
           </div>
           <div>
-            Daily API Spend: <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>$142.50</span>
+            Daily API Spend: <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>${(dailyCosts.total_spend || 0).toFixed(2)}</span>
           </div>
         </div>
       </div>

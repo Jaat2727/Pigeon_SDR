@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Pause, Play, ArrowLeft, Copy, Users, Send, ThumbsUp, ThumbsDown, Calendar, Percent, DollarSign } from 'lucide-react';
+import { Pause, Play, ArrowLeft, Copy, Users, Send, ThumbsUp, ThumbsDown, Calendar, DollarSign } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import api from '../api/index.js';
 import {
   StatusPill, CampaignDot, StatTile, FunnelBar,
-  AgentRow, ActivityLine, LoadingState, ErrorState,
+  AgentRow, ActivityLine, LoadingState, ErrorState, PausedState,
 } from '../components/index.jsx';
 import './CampaignDashboard.css';
 
@@ -65,8 +65,13 @@ export default function CampaignDashboard() {
     navigate('/campaigns');
   };
 
-  const handleAgentToggle = (name, val) => {
-    setAgents(prev => prev.map(a => a.name === name ? { ...a, enabled: val } : a));
+  // Agent toggle persists to campaign.agents via updateCampaign
+  const handleAgentToggle = async (name, val) => {
+    const agent = agents.find(a => a.name === name);
+    if (!agent?.key) return;
+    const updatedAgents = { ...campaign.agents, [agent.key]: val };
+    await api.updateCampaign(id, { agents: updatedAgents });
+    await loadData();
   };
 
   const activeChannels = campaign.channels
@@ -76,6 +81,10 @@ export default function CampaignDashboard() {
       }).join(', ')
     : '—';
 
+  // Compute health from agents array
+  const totalFailures = agents.reduce((sum, a) => sum + (a.failures_today || 0), 0);
+  const totalRuns = agents.reduce((sum, a) => sum + (a.runs_today || 0), 0);
+
   return (
     <div className={`page animate-in ${isPaused ? 'page--paused' : ''}`}>
       {/* Back link */}
@@ -83,8 +92,11 @@ export default function CampaignDashboard() {
         <ArrowLeft size={14} /> All Campaigns
       </button>
 
+      {/* Paused overlay */}
+      {isPaused && <PausedState message="This campaign is paused — no agents are running" />}
+
       {/* Header Strip */}
-      <div className="dash-header" style={{ borderLeft: `4px solid ${campaign.colour}` }}>
+      <div className="dash-header" style={{ borderLeft: `4px solid ${campaign.colour}`, opacity: isPaused ? 0.7 : 1 }}>
         <div className="dash-header-left">
           <div className="dash-header-title-row">
             <CampaignDot colour={campaign.colour} size={14} />
@@ -117,7 +129,7 @@ export default function CampaignDashboard() {
 
       {/* Funnel Bar */}
       {metrics?.funnel && (
-        <div style={{ margin: `${('var(--sp-5)')} 0` }}>
+        <div style={{ margin: `${'var(--sp-5)'} 0` }}>
           <h3 className="section-heading">Pipeline Funnel</h3>
           <FunnelBar
             funnel={metrics.funnel}
@@ -127,31 +139,35 @@ export default function CampaignDashboard() {
         </div>
       )}
 
-      {/* Stats Grid */}
+      {/* Stats Grid — no fake trends */}
       <div className="dash-stats-grid">
         <StatTile 
           label="Total Prospects" value={metrics?.total_prospects ?? 0} 
-          icon={Users} color="var(--accent)" trend="up" trendValue="12%" 
+          icon={Users} color="var(--accent)"
+          sub={`${metrics?.funnel?.qualified || 0} qualified`}
         />
         <StatTile 
           label="Messages Sent" value={metrics?.messages_sent ?? 0} 
-          icon={Send} color="var(--brand-purple)" trend="up" trendValue="8.4%" 
+          icon={Send} color="var(--brand-purple)"
+          sub={`${metrics?.response_rate || 0}% response rate`}
         />
         <StatTile 
           label="Positive Replies" value={metrics?.positive_replies ?? 0} 
-          icon={ThumbsUp} color="var(--success)" trend="up" trendValue="2.1%" 
+          icon={ThumbsUp} color="var(--success)"
         />
         <StatTile 
           label="Negative Replies" value={metrics?.negative_replies ?? 0} 
-          icon={ThumbsDown} color="var(--danger)" trend="down" trendValue="1.5%" 
+          icon={ThumbsDown} color="var(--danger)"
         />
         <StatTile 
           label="Meetings Booked" value={metrics?.meetings ?? 0} 
-          icon={Calendar} color="var(--brand-orange)" trend="up" trendValue="5.0%" 
+          icon={Calendar} color="var(--brand-orange)"
+          sub={`${metrics?.meeting_rate || 0}% meeting rate`}
         />
         <StatTile 
-          label="Spend Today" value={`$${metrics?.spend_today ?? 0}`} 
-          icon={DollarSign} color="var(--brand-blue)" trend="down" trendValue="4%" 
+          label="Spend Today" value={`$${(metrics?.spend_today ?? 0).toFixed(2)}`} 
+          icon={DollarSign} color="var(--brand-blue)"
+          sub={`${metrics?.agent_runs_today || 0} agent runs`}
         />
       </div>
       <div className="dash-two-col">
@@ -182,7 +198,7 @@ export default function CampaignDashboard() {
 
         {/* Right column: Agents + Health */}
         <div className="dash-right-col">
-          {/* Agents Panel */}
+          {/* Agents Panel — all 7 agents */}
           <div className="card">
             <div className="card__header">
               <span className="card__title">Agents</span>
@@ -199,7 +215,7 @@ export default function CampaignDashboard() {
             </div>
           </div>
 
-          {/* Health */}
+          {/* Health — computed values */}
           <div className="card">
             <div className="card__header">
               <span className="card__title">Health</span>
@@ -208,8 +224,8 @@ export default function CampaignDashboard() {
               <div className="health-grid">
                 <div className="health-item">
                   <span className="health-label">Failed Runs</span>
-                  <span className="health-value font-mono" style={{ color: metrics?.failures_today > 0 ? 'var(--danger)' : 'var(--text-secondary)' }}>
-                    {metrics?.failures_today ?? 0}
+                  <span className="health-value font-mono" style={{ color: totalFailures > 0 ? 'var(--danger)' : 'var(--text-secondary)' }}>
+                    {totalFailures}
                   </span>
                 </div>
                 <div className="health-item">
@@ -218,11 +234,13 @@ export default function CampaignDashboard() {
                 </div>
                 <div className="health-item">
                   <span className="health-label">Escalations</span>
-                  <span className="health-value font-mono">{metrics?.escalations ?? 0}</span>
+                  <span className="health-value font-mono" style={{ color: (metrics?.escalations || 0) > 0 ? 'var(--warning-text, #B28C00)' : 'var(--text-secondary)' }}>
+                    {metrics?.escalations ?? 0}
+                  </span>
                 </div>
                 <div className="health-item">
                   <span className="health-label">Agent Runs Today</span>
-                  <span className="health-value font-mono">{metrics?.agent_runs_today ?? 0}</span>
+                  <span className="health-value font-mono">{totalRuns}</span>
                 </div>
               </div>
             </div>

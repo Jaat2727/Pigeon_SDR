@@ -1,6 +1,7 @@
 /**
  * AppContext — Global state provider.
- * Manages: kill switch, system control, campaigns list, conflicts count.
+ * Manages: kill switch, system control, campaigns list, conflicts count,
+ * escalations count, prospects count, daily costs.
  * All children can read and mutate these via useApp().
  */
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
@@ -22,6 +23,15 @@ export function AppProvider({ children }) {
 
   // Conflicts
   const [conflictsCount, setConflictsCount] = useState(0);
+
+  // Escalations
+  const [escalationsCount, setEscalationsCount] = useState(0);
+
+  // Prospects
+  const [prospectsCount, setProspectsCount] = useState(0);
+
+  // Daily costs / system stats
+  const [dailyCosts, setDailyCosts] = useState({ total_spend: 0, avg_latency_ms: 0, total_runs: 0 });
 
   // ── Loaders ──
   const loadSystemControl = useCallback(async () => {
@@ -55,19 +65,48 @@ export function AppProvider({ children }) {
     }
   }, []);
 
+  const loadEscalations = useCallback(async () => {
+    try {
+      const data = await api.getEscalations();
+      setEscalationsCount(data.length);
+    } catch (err) {
+      console.error('Failed to load escalations:', err);
+    }
+  }, []);
+
+  const loadProspectsCount = useCallback(async () => {
+    try {
+      const data = await api.getAllProspects();
+      setProspectsCount(data.length);
+    } catch (err) {
+      console.error('Failed to load prospects count:', err);
+    }
+  }, []);
+
+  const loadDailyCosts = useCallback(async () => {
+    try {
+      const data = await api.getCosts();
+      setDailyCosts(data);
+    } catch (err) {
+      console.error('Failed to load daily costs:', err);
+    }
+  }, []);
+
   // Initial load
   useEffect(() => {
     loadSystemControl();
     loadCampaigns();
     loadConflicts();
-  }, [loadSystemControl, loadCampaigns, loadConflicts]);
+    loadEscalations();
+    loadProspectsCount();
+    loadDailyCosts();
+  }, [loadSystemControl, loadCampaigns, loadConflicts, loadEscalations, loadProspectsCount, loadDailyCosts]);
 
   // ── Actions ──
   const toggleKillSwitch = useCallback(async (engaged) => {
     try {
       const data = await api.toggleKillSwitch(engaged);
       setSystemControl(data);
-      // Refresh campaigns since kill switch changes their status
       await loadCampaigns();
     } catch (err) {
       console.error('Failed to toggle kill switch:', err);
@@ -118,6 +157,16 @@ export function AppProvider({ children }) {
     // Conflicts
     conflictsCount,
     loadConflicts,
+
+    // Escalations
+    escalationsCount,
+    loadEscalations,
+
+    // Prospects
+    prospectsCount,
+
+    // Daily costs / system stats
+    dailyCosts,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

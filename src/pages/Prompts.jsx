@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Plus, ArrowLeft } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Plus } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import api from '../api/index.js';
 import { LoadingState, ErrorState } from '../components/index.jsx';
@@ -23,7 +23,7 @@ const STATUS_LABELS = {
 export default function Prompts() {
   const { campaigns } = useApp();
   const [activeTab, setActiveTab] = useState('System Prompt');
-  const [versions, setVersions] = useState([]);
+  const [allVersions, setAllVersions] = useState([]); // all versions for current campaign
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -31,49 +31,78 @@ export default function Prompts() {
   const [compareSource, setCompareSource] = useState(null);
   const [compareTarget, setCompareTarget] = useState(null);
 
-  const campaignId = campaigns[0]?.id;
-  const campaignName = campaigns[0]?.name || 'Loading...';
+  // Campaign selector
+  const [campaignId, setCampaignId] = useState('');
+
+  // Init campaign selection
+  useEffect(() => {
+    if (campaigns.length > 0 && !campaignId) {
+      setCampaignId(campaigns[0].id);
+    }
+  }, [campaigns, campaignId]);
+
+  const campaignName = campaigns.find(c => c.id === campaignId)?.name || 'Loading...';
 
   const loadPrompts = useCallback(async () => {
     if (!campaignId) return;
     setLoading(true);
+    setError(null);
     try {
       const data = await api.getCampaignPrompts(campaignId);
       // Sort reverse chronological
       data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-      
+
       // Assign statuses based on active flag and order
-      const activeIdx = data.findIndex(v => v.is_active);
-      const enriched = data.map((v, i) => {
+      const enriched = data.map((v) => {
         let status = 'draft';
         if (v.is_active) status = 'active';
-        else if (activeIdx !== -1 && i > activeIdx) status = 'archived'; // older than active
-        else if (activeIdx !== -1 && i < activeIdx) status = 'rolled-back'; // newer than active but not active? Wait, usually newer is draft or rolled-back.
-        else status = 'draft';
-        
+        else {
+          // Find the active version for the same agent
+          const activeForAgent = data.find(d => d.agent_name === v.agent_name && d.is_active);
+          if (activeForAgent) {
+            const activeDate = new Date(activeForAgent.created_at);
+            const thisDate = new Date(v.created_at);
+            status = thisDate < activeDate ? 'archived' : 'rolled-back';
+          }
+        }
         return { ...v, status };
       });
 
-      setVersions(enriched);
-      
-      if (enriched.length > 0) {
-        const active = enriched.find(v => v.status === 'active') || enriched[0];
-        const prev = enriched.find(v => v.id !== active.id) || active;
-        
-        if (!selectedVersion) setSelectedVersion(active.id);
-        if (!compareSource) setCompareSource(prev.id);
-        if (!compareTarget) setCompareTarget(active.id);
-      }
+      setAllVersions(enriched);
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, [campaignId, selectedVersion, compareSource, compareTarget]);
+  }, [campaignId]);
 
   useEffect(() => {
     loadPrompts();
+    // Reset selections when campaign changes
+    setSelectedVersion(null);
+    setCompareSource(null);
+    setCompareTarget(null);
   }, [loadPrompts]);
+
+  // Filter versions by active tab (agent_name)
+  const versions = useMemo(() => {
+    return allVersions.filter(v => v.agent_name === activeTab);
+  }, [allVersions, activeTab]);
+
+  // Auto-select comparison versions when tab changes
+  useEffect(() => {
+    if (versions.length > 0) {
+      const active = versions.find(v => v.status === 'active') || versions[0];
+      const prev = versions.find(v => v.id !== active.id) || active;
+      setSelectedVersion(active.id);
+      setCompareSource(prev.id);
+      setCompareTarget(active.id);
+    } else {
+      setSelectedVersion(null);
+      setCompareSource(null);
+      setCompareTarget(null);
+    }
+  }, [versions]);
 
   const handleActivate = async (id) => {
     if (!id) return;
@@ -85,12 +114,33 @@ export default function Prompts() {
     }
   };
 
-  if (loading && versions.length === 0) return <LoadingState message="Loading prompts..." />;
+  const handleSaveAsNew = async () => {
+    if (!campaignId || !compareTarget) return;
+    const targetVersion = versions.find(v => v.id === compareTarget);
+    if (!targetVersion) return;
+    try {
+      await api.createPromptVersion(campaignId, {
+        agent_name: activeTab,
+        content: targetVersion.content,
+      });
+      await loadPrompts();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  if (loading && allVersions.length === 0) return <LoadingState message="Loading prompts..." />;
   if (error) return <ErrorState message={error} onRetry={loadPrompts} />;
 
   const activeVersionInfo = versions.find(v => v.status === 'active');
   const sourceVersion = versions.find(v => v.id === compareSource);
   const targetVersion = versions.find(v => v.id === compareTarget);
+
+  // Count versions per tab
+  const tabCounts = {};
+  AGENT_TABS.forEach(tab => {
+    tabCounts[tab] = allVersions.filter(v => v.agent_name === tab).length;
+  });
 
   return (
     <div className="prompts-page animate-in">
@@ -98,17 +148,32 @@ export default function Prompts() {
       <div className="prompts-header">
         <h1>Prompt Versions & Rollback</h1>
         <div className="prompts-header-sub">
-          Campaign: <strong>{campaignName}</strong> · Review diffs and deploy prompt instructions.
+          <span>Campaign: </span>
+          <select
+            value={campaignId}
+            onChange={(e) => setCampaignId(e.target.value)}
+            style={{
+              background: 'var(--surface-card)', border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-input)', padding: '4px 8px',
+              fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600,
+              color: 'var(--text-primary)', marginLeft: '4px', marginRight: '8px',
+            }}
+          >
+            {campaigns.map(c => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+          · Review diffs and deploy prompt instructions.
         </div>
         <div className="prompts-header-actions">
           <div /> {/* spacer */}
-          <button className="btn btn--primary" style={{ borderRadius: 'var(--radius-btn)' }}>
+          <button className="btn btn--primary" style={{ borderRadius: 'var(--radius-btn)' }} onClick={handleSaveAsNew}>
             <Plus size={16} /> Create Draft
           </button>
         </div>
       </div>
 
-      {/* Tab Bar */}
+      {/* Tab Bar — shows count per agent */}
       <div className="prompts-tabs">
         {AGENT_TABS.map(tab => (
           <button
@@ -117,6 +182,9 @@ export default function Prompts() {
             onClick={() => setActiveTab(tab)}
           >
             {tab}
+            {tabCounts[tab] > 0 && (
+              <span style={{ marginLeft: '6px', fontSize: '10px', opacity: 0.7 }}>({tabCounts[tab]})</span>
+            )}
           </button>
         ))}
       </div>
@@ -125,113 +193,129 @@ export default function Prompts() {
       <div className="prompts-body">
         {/* Left — Version History */}
         <div>
-          <div className="prompts-history-title">Version History</div>
+          <div className="prompts-history-title">Version History — {activeTab}</div>
           <div className="prompts-history-list">
-            {versions.map(v => (
-              <div
-                key={v.id}
-                className={`prompts-version-card ${selectedVersion === v.id ? 'selected' : ''}`}
-                onClick={() => {
-                  setSelectedVersion(v.id);
-                  setCompareSource(v.id);
-                }}
-              >
-                <div className="prompts-version-top">
-                  <span className="prompts-version-label">v{v.version}</span>
-                  <span className={`pv-status pv-status--${v.status}`}>
-                    {STATUS_LABELS[v.status]}
-                  </span>
-                </div>
-                <div className="prompts-version-author">
-                  by {v.author}<br />
-                  {new Date(v.created_at).toLocaleDateString()}
-                </div>
+            {versions.length === 0 ? (
+              <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+                No prompt versions for this agent yet.
               </div>
-            ))}
+            ) : (
+              versions.map(v => (
+                <div
+                  key={v.id}
+                  className={`prompts-version-card ${selectedVersion === v.id ? 'selected' : ''}`}
+                  onClick={() => {
+                    setSelectedVersion(v.id);
+                    setCompareSource(v.id);
+                  }}
+                >
+                  <div className="prompts-version-top">
+                    <span className="prompts-version-label">v{v.version}</span>
+                    <span className={`pv-status pv-status--${v.status}`}>
+                      {STATUS_LABELS[v.status]}
+                    </span>
+                  </div>
+                  <div className="prompts-version-author">
+                    by {v.author}<br />
+                    {new Date(v.created_at).toLocaleDateString()}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
         {/* Right — Comparison */}
-        <div className="prompts-compare">
-          <div className="prompts-compare-header">
-            <span className="prompts-compare-title">Comparing Prompt Versions</span>
-            <div className="prompts-compare-selector">
-              <span>Compare</span>
-              <select value={compareSource || ''} onChange={(e) => setCompareSource(e.target.value)}>
-                {versions.map(v => (
-                  <option key={v.id} value={v.id}>v{v.version} ({STATUS_LABELS[v.status]})</option>
-                ))}
-              </select>
-              <span>with</span>
-              <select value={compareTarget || ''} onChange={(e) => setCompareTarget(e.target.value)}>
-                {versions.map(v => (
-                  <option key={v.id} value={v.id}>v{v.version} ({STATUS_LABELS[v.status]})</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Side-by-side diff */}
-          <div className="prompts-diff-columns">
-            {/* Source (left) */}
-            <div className="prompts-diff-col">
-              <div className="prompts-diff-col-header">
-                <div>
-                  <div className="prompts-diff-col-title">
-                    Version v{sourceVersion?.version} Prompt
-                  </div>
-                  <div className="prompts-diff-col-date">
-                    {sourceVersion ? new Date(sourceVersion.created_at).toLocaleString() : ''}
-                  </div>
-                </div>
-              </div>
-              <div className="prompts-diff-content">
-                {renderDiffContent(sourceVersion?.content, targetVersion?.content, 'source')}
+        {versions.length > 0 ? (
+          <div className="prompts-compare">
+            <div className="prompts-compare-header">
+              <span className="prompts-compare-title">Comparing Prompt Versions</span>
+              <div className="prompts-compare-selector">
+                <span>Compare</span>
+                <select value={compareSource || ''} onChange={(e) => setCompareSource(e.target.value)}>
+                  {versions.map(v => (
+                    <option key={v.id} value={v.id}>v{v.version} ({STATUS_LABELS[v.status]})</option>
+                  ))}
+                </select>
+                <span>with</span>
+                <select value={compareTarget || ''} onChange={(e) => setCompareTarget(e.target.value)}>
+                  {versions.map(v => (
+                    <option key={v.id} value={v.id}>v{v.version} ({STATUS_LABELS[v.status]})</option>
+                  ))}
+                </select>
               </div>
             </div>
 
-            {/* Target (right) */}
-            <div className="prompts-diff-col">
-              <div className="prompts-diff-col-header">
-                <div>
-                  <div className="prompts-diff-col-title">
-                    Version v{targetVersion?.version} Prompt ({STATUS_LABELS[targetVersion?.status]})
-                  </div>
-                  <div className="prompts-diff-col-date">
-                    {targetVersion ? new Date(targetVersion.created_at).toLocaleString() : ''}
+            {/* Side-by-side diff */}
+            <div className="prompts-diff-columns">
+              {/* Source (left) */}
+              <div className="prompts-diff-col">
+                <div className="prompts-diff-col-header">
+                  <div>
+                    <div className="prompts-diff-col-title">
+                      Version v{sourceVersion?.version} Prompt
+                    </div>
+                    <div className="prompts-diff-col-date">
+                      {sourceVersion ? new Date(sourceVersion.created_at).toLocaleString() : ''}
+                    </div>
                   </div>
                 </div>
-                {targetVersion?.status === 'active' && (
-                  <span className="prompts-diff-col-badge">Active Agent Standard</span>
+                <div className="prompts-diff-content">
+                  {renderDiffContent(sourceVersion?.content, targetVersion?.content, 'source')}
+                </div>
+              </div>
+
+              {/* Target (right) */}
+              <div className="prompts-diff-col">
+                <div className="prompts-diff-col-header">
+                  <div>
+                    <div className="prompts-diff-col-title">
+                      Version v{targetVersion?.version} Prompt ({STATUS_LABELS[targetVersion?.status]})
+                    </div>
+                    <div className="prompts-diff-col-date">
+                      {targetVersion ? new Date(targetVersion.created_at).toLocaleString() : ''}
+                    </div>
+                  </div>
+                  {targetVersion?.status === 'active' && (
+                    <span className="prompts-diff-col-badge">Active Agent Standard</span>
+                  )}
+                </div>
+                <div className="prompts-diff-content">
+                  {renderDiffContent(sourceVersion?.content, targetVersion?.content, 'target')}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="prompts-compare-footer">
+              <span className="prompts-compare-footer-note">
+                The next agent run will use v{activeVersionInfo?.version || '?'} (Active).
+              </span>
+              <div className="prompts-compare-footer-actions">
+                <button
+                  className="btn btn--secondary"
+                  style={{ borderRadius: 'var(--radius-btn)' }}
+                  onClick={handleSaveAsNew}
+                >
+                  Save as New Version
+                </button>
+                {targetVersion && targetVersion.status !== 'active' && (
+                  <button 
+                    className="btn btn--primary" 
+                    style={{ borderRadius: 'var(--radius-btn)' }}
+                    onClick={() => handleActivate(targetVersion.id)}
+                  >
+                    Activate Version v{targetVersion.version}
+                  </button>
                 )}
               </div>
-              <div className="prompts-diff-content">
-                {renderDiffContent(sourceVersion?.content, targetVersion?.content, 'target')}
-              </div>
             </div>
           </div>
-
-          {/* Footer */}
-          <div className="prompts-compare-footer">
-            <span className="prompts-compare-footer-note">
-              The next agent run will use v{activeVersionInfo?.version} (Active).
-            </span>
-            <div className="prompts-compare-footer-actions">
-              <button className="btn btn--secondary" style={{ borderRadius: 'var(--radius-btn)' }}>
-                Save as New Version
-              </button>
-              {targetVersion && targetVersion.status !== 'active' && (
-                <button 
-                  className="btn btn--primary" 
-                  style={{ borderRadius: 'var(--radius-btn)' }}
-                  onClick={() => handleActivate(targetVersion.id)}
-                >
-                  Activate Version v{targetVersion.version}
-                </button>
-              )}
-            </div>
+        ) : (
+          <div className="prompts-compare" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
+            <p>Select an agent tab with prompt versions to compare.</p>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
@@ -247,7 +331,6 @@ function renderDiffContent(sourceContent, targetContent, side) {
   const otherLines = (side === 'source' ? targetContent : sourceContent)?.split('\n') || [];
 
   return lines.map((line, i) => {
-    // Very basic exact-line diff matching
     const inOther = otherLines.includes(line);
     
     if (!inOther && side === 'source') {

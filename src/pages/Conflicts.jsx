@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, Clock } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import api from '../api/index.js';
-import { LoadingState, ErrorState, StatusPill } from '../components/index.jsx';
+import { useApp } from '../context/AppContext';
+import { LoadingState, ErrorState, ConfirmDialog } from '../components/index.jsx';
 
 export default function Conflicts() {
   const navigate = useNavigate();
+  const { loadConflicts: reloadGlobalConflicts } = useApp();
   const [conflicts, setConflicts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [resolving, setResolving] = useState(null); // conflict being resolved
 
   useEffect(() => {
     let mounted = true;
@@ -25,6 +28,17 @@ export default function Conflicts() {
     load();
     return () => { mounted = false; };
   }, []);
+
+  const handleResolve = async (conflictId, winningCampaignId) => {
+    try {
+      await api.resolveConflict(conflictId, winningCampaignId);
+      setConflicts(prev => prev.filter(c => c.id !== conflictId));
+      setResolving(null);
+      await reloadGlobalConflicts();
+    } catch (err) {
+      console.error('Failed to resolve conflict:', err);
+    }
+  };
 
   if (loading) return <LoadingState message="Checking for conflicts..." />;
   if (error) return <ErrorState message={error} onRetry={() => window.location.reload()} />;
@@ -78,7 +92,12 @@ export default function Conflicts() {
                     </span>
                   </td>
                   <td className="td-action">
-                    <button className="btn btn--secondary btn--sm">Resolve</button>
+                    <button
+                      className="btn btn--secondary btn--sm"
+                      onClick={() => setResolving(c)}
+                    >
+                      Resolve
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -86,6 +105,34 @@ export default function Conflicts() {
           </table>
         )}
       </div>
+
+      {/* Resolve Dialog — pick winning campaign */}
+      {resolving && (
+        <div className="confirm-overlay" onClick={() => setResolving(null)}>
+          <div className="confirm-dialog animate-in" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px' }}>
+            <h3 className="confirm-dialog__title">Resolve Conflict</h3>
+            <p className="confirm-dialog__message">
+              <strong>{resolving.prospect_name}</strong> is claimed by multiple campaigns. Choose which campaign wins:
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', margin: '16px 0' }}>
+              {resolving.campaigns.map((camp, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  className="btn btn--secondary"
+                  style={{ justifyContent: 'flex-start' }}
+                  onClick={() => handleResolve(resolving.id, resolving.campaign_ids?.[i] || camp)}
+                >
+                  Assign to: {camp}
+                </button>
+              ))}
+            </div>
+            <div className="confirm-dialog__actions">
+              <button type="button" className="btn btn--ghost" onClick={() => setResolving(null)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

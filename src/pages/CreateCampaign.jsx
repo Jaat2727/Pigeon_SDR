@@ -16,7 +16,7 @@ const AGENTS = [
   { key: 'icp_fitment', name: 'ICP Fitment', desc: 'Scores prospect fit and returns qualified/rejected with reason.', engine: 'dronahq' },
   { key: 'personalisation', name: 'Personalisation & Send', desc: 'Writes the message using research and sends it.', engine: 'dronahq' },
   { key: 'conversation', name: 'Conversation', desc: 'Reads replies, classifies intent and decides next action.', engine: 'dronahq' },
-  { key: 'outreach_strategy', name: 'Outreach Strategy', desc: 'Picks the best channel and timing for each prospect.', engine: 'our_engine' },
+  { key: 'outreach_strategy', name: 'Outreach Strategy', desc: 'Picks the best channel and timing for each prospect.', engine: 'dronahq' },
   { key: 'followup_timing', name: 'Follow-up Timing', desc: 'Decides when to nudge or stop following up.', engine: 'our_engine' },
   { key: 'voice_sdr', name: 'Voice SDR (Stretch)', desc: 'Makes voice calls to qualified prospects.', engine: 'dronahq' },
 ];
