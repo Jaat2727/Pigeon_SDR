@@ -6,7 +6,7 @@ import { supabase } from './supabaseClient';
 import { AppProvider } from './context/AppContext';
 import DashboardLayout from './layouts/DashboardLayout';
 
-// Pages
+// Pages — existing
 import Login from './pages/Login';
 import CampaignsList from './pages/CampaignsList';
 import CampaignDashboard from './pages/CampaignDashboard';
@@ -19,51 +19,64 @@ import ReviewQueue from './pages/ReviewQueue';
 import Settings from './pages/Settings';
 import Conflicts from './pages/Conflicts';
 
-import './App.css';
+// Pages — new
+import Dashboard from './pages/Dashboard';
+import Agents from './pages/Agents';
+import Calls from './pages/Calls';
+import Analytics from './pages/Analytics';
+import Integrations from './pages/Integrations';
 
-// Placeholder for unbuilt pages
-function PlaceholderPage({ title, description }) {
-  return (
-    <div className="page animate-in">
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">{title}</h1>
-          <p className="page-subtitle">{description}</p>
-        </div>
-      </div>
-      <div className="card">
-        <div className="card__body" style={{ textAlign: 'center', padding: 'var(--sp-10)', color: 'var(--text-muted)' }}>
-          This module is part of the next build phase.
-        </div>
-      </div>
-    </div>
-  );
-}
+import './App.css';
 
 function AuthenticatedApp({ user, onSignOut }) {
   return (
     <AppProvider>
       <DashboardLayout user={user} onSignOut={onSignOut}>
         <Routes>
+          {/* Dashboard */}
+          <Route path="/dashboard" element={<Dashboard />} />
+
           {/* Campaigns */}
           <Route path="/campaigns" element={<CampaignsList />} />
           <Route path="/campaigns/new" element={<CreateCampaign />} />
           <Route path="/campaigns/:id" element={<CampaignDashboard />} />
           <Route path="/campaigns/:id/edit" element={<CreateCampaign />} />
-          
+
           {/* Prospects */}
           <Route path="/prospects" element={<Prospects />} />
           <Route path="/prospects/:id" element={<ProspectDetail />} />
-          
-          {/* Other Modules */}
+
+          {/* Agents */}
+          <Route path="/agents" element={<Agents />} />
+
+          {/* Calls */}
+          <Route path="/calls" element={<Calls />} />
+
+          {/* Analytics */}
+          <Route path="/analytics" element={<Analytics />} />
+
+          {/* Integrations */}
+          <Route path="/integrations" element={<Integrations />} />
+
+          {/* Prompts */}
           <Route path="/prompts" element={<Prompts />} />
+
+          {/* Review Queue / Approvals */}
           <Route path="/review-queue" element={<ReviewQueue />} />
+          <Route path="/campaigns/approvals" element={<ReviewQueue />} />
+
+          {/* Conflicts */}
           <Route path="/conflicts" element={<Conflicts />} />
+
+          {/* Knowledge */}
           <Route path="/knowledge" element={<KnowledgeBase />} />
+
+          {/* Settings */}
           <Route path="/settings" element={<Settings />} />
-          
+
           {/* Fallback */}
-          <Route path="*" element={<Navigate to="/campaigns" replace />} />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </DashboardLayout>
     </AppProvider>
@@ -71,11 +84,11 @@ function AuthenticatedApp({ user, onSignOut }) {
 }
 
 function App() {
-  // Default demo user — login state is true for UI development
+  // Default demo user — Kriti Jasuja
   const [user, setUser] = useState({
-    id: 'demo-user-123',
-    email: 'nishu@iitm.ac.in',
-    user_metadata: { full_name: 'Nishu User' }
+    id: 'demo-user-kriti',
+    email: 'kriti@pigeonsdr.com',
+    user_metadata: { full_name: 'Kriti Jasuja' },
   });
   const [loading, setLoading] = useState(false);
 
@@ -85,7 +98,6 @@ function App() {
         setUser(session.user);
       }
     });
-
     return () => subscription?.unsubscribe?.();
   }, []);
 
@@ -98,7 +110,7 @@ function App() {
     return (
       <div className="loading-screen">
         <div className="loading-spinner" />
-        <span className="loading-text">Loading Pigeon SDR...</span>
+        <span className="loading-text">Loading Pigeon SDR…</span>
       </div>
     );
   }

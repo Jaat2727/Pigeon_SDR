@@ -1,50 +1,74 @@
 /**
- * Mock API — Phase 1 complete rebuild.
- * Fixes: 3-state ICP, all 7 agents, rich timelines, missing CRUD functions,
- * reps, suppression, computed health/cost, human-readable escalation names.
+ * Mock API — Pigeon SDR Command Center
+ * Updated for Buildathon 2026 demo.
+ * 3 concurrent campaigns: US SaaS CTO | India BFSI CIO | Voice AI Founder
  */
 
-const delay = (ms = 300) => new Promise(r => setTimeout(r, ms + Math.random() * 200));
+const delay = (ms = 250) => new Promise(r => setTimeout(r, ms + Math.random() * 150));
 
-const CAMPAIGN_COLOURS = ['#3B9AE1', '#4FBF92', '#D9A441'];
+const CAMPAIGN_COLOURS = ['#4F6EF7', '#10B981', '#F59E0B'];
 const FUNNEL_STAGES = ['discovered', 'researched', 'qualified', 'contacted', 'engaged', 'meeting', 'opportunity'];
 
 const CAMPAIGN_TARGETS = {
-  'camp_1': { prospects: 840, sent: 312, replies: 47, meetings: 8 },
-  'camp_2': { prospects: 520, sent: 198, replies: 22, meetings: 4 },
-  'camp_3': { prospects: 390, sent: 145, replies: 31, meetings: 6 }
+  'camp_1': { prospects: 840, sent: 312, replies: 47, meetings: 8, pipeline_value: 420000 },
+  'camp_2': { prospects: 520, sent: 198, replies: 22, meetings: 4, pipeline_value: 280000 },
+  'camp_3': { prospects: 390, sent: 145, replies: 31, meetings: 6, pipeline_value: 195000 },
 };
 
 let _campaigns = [
   {
-    id: 'camp_1', name: 'Enterprise HR Tech Outreach', description: 'Target CHROs at large enterprises.', colour: CAMPAIGN_COLOURS[0], status: 'live', owner: 'Nishu',
-    target_audience: 'CHROs, US Enterprise 5k–10k employees', channels: { email: true, linkedin: true, sms: false, voice: false },
+    id: 'camp_1',
+    name: 'US SaaS CTO Outreach',
+    description: 'Target CTOs at high-growth US SaaS companies scaling their engineering teams.',
+    colour: CAMPAIGN_COLOURS[0],
+    status: 'live',
+    owner: 'Kriti Jasuja',
+    icp: 'US SaaS CTOs · $5M–$50M ARR',
+    target_audience: 'CTOs, VP Engineering — US SaaS, Series B+',
+    channels: { email: true, linkedin: true, sms: false, voice: false },
     agents: { research: true, icp_fitment: true, personalisation: true, conversation: true, outreach_strategy: true, followup_timing: true, voice_sdr: false },
-    reps: ['rep_1', 'rep_2'], created_at: '2026-09-15T10:30:00Z',
+    reps: ['rep_1', 'rep_2'],
+    created_at: '2026-09-10T10:30:00Z',
   },
   {
-    id: 'camp_2', name: 'Mid-Market CFO Campaign', description: 'Reach CFOs at mid-market fintech and SaaS companies.', colour: CAMPAIGN_COLOURS[1], status: 'paused', owner: 'Nishu',
-    target_audience: 'CFOs, EU Fintech and SaaS companies', channels: { email: true, linkedin: true, sms: true, voice: false },
+    id: 'camp_2',
+    name: 'India BFSI CIO Outreach',
+    description: 'Reach CIOs at leading Indian BFSI institutions modernising their tech stack.',
+    colour: CAMPAIGN_COLOURS[1],
+    status: 'paused',
+    owner: 'Kriti Jasuja',
+    icp: 'India BFSI CIOs · Large Enterprise',
+    target_audience: 'CIOs, CDOs — Indian Banks, Insurance, NBFC',
+    channels: { email: true, linkedin: true, sms: true, voice: false },
     agents: { research: true, icp_fitment: true, personalisation: true, conversation: true, outreach_strategy: true, followup_timing: true, voice_sdr: false },
-    reps: ['rep_1'], created_at: '2026-09-16T08:00:00Z',
+    reps: ['rep_1'],
+    created_at: '2026-09-12T08:00:00Z',
   },
   {
-    id: 'camp_3', name: 'SaaS Dev Tools – Tech Leaders', description: 'Engage VPs of Engineering at early-stage dev tools companies.', colour: CAMPAIGN_COLOURS[2], status: 'live', owner: 'Nishu',
-    target_audience: 'VPs of Engineering, Dev Tools, Series A–B', channels: { email: true, linkedin: false, sms: false, voice: false },
-    agents: { research: true, icp_fitment: true, personalisation: true, conversation: true, outreach_strategy: true, followup_timing: true, voice_sdr: false },
-    reps: ['rep_2'], created_at: '2026-09-17T12:00:00Z',
+    id: 'camp_3',
+    name: 'Voice AI Founder Outreach',
+    description: 'Connect with founders building voice AI and conversational AI startups.',
+    colour: CAMPAIGN_COLOURS[2],
+    status: 'live',
+    owner: 'Kriti Jasuja',
+    icp: 'Voice AI Founders · Seed–Series A',
+    target_audience: 'Founders, Co-Founders — Voice AI, Conversational AI startups',
+    channels: { email: true, linkedin: true, sms: false, voice: true },
+    agents: { research: true, icp_fitment: true, personalisation: true, conversation: true, outreach_strategy: true, followup_timing: true, voice_sdr: true },
+    reps: ['rep_2'],
+    created_at: '2026-09-14T12:00:00Z',
   }
 ];
 
 // ── Reps ──
 let _reps = [
-  { id: 'rep_1', full_name: 'Nishu Jain', email: 'nishu@iitm.ac.in', title: 'Founder & SDR Lead', linkedin_url: 'https://linkedin.com/in/nishu', is_active: true, created_at: '2026-09-10T10:00:00Z' },
-  { id: 'rep_2', full_name: 'Aarav Singh', email: 'aarav@pigeonsdr.com', title: 'Account Executive', linkedin_url: 'https://linkedin.com/in/aarav', is_active: true, created_at: '2026-09-12T10:00:00Z' },
+  { id: 'rep_1', full_name: 'Kriti Jasuja', email: 'kriti@pigeonsdr.com', title: 'Founder & SDR Lead', linkedin_url: 'https://linkedin.com/in/kriti', is_active: true, created_at: '2026-09-01T10:00:00Z' },
+  { id: 'rep_2', full_name: 'Aarav Singh', email: 'aarav@pigeonsdr.com', title: 'Account Executive', linkedin_url: 'https://linkedin.com/in/aarav', is_active: true, created_at: '2026-09-05T10:00:00Z' },
 ];
 
 // ── Suppression ──
 let _suppression = [
-  { id: 'sup_1', email: 'ceo@competitor.com', domain: null, reason: 'Competitor', added_by: 'Nishu', created_at: '2026-09-14T10:00:00Z' },
+  { id: 'sup_1', email: 'ceo@competitor.com', domain: null, reason: 'Competitor', added_by: 'Kriti', created_at: '2026-09-14T10:00:00Z' },
   { id: 'sup_2', email: null, domain: 'government.gov', reason: 'Government org — not a target', added_by: 'System', created_at: '2026-09-14T10:00:00Z' },
   { id: 'sup_3', email: 'optout@example.com', domain: null, reason: 'Opt-out request', added_by: 'System', created_at: '2026-09-15T10:00:00Z' },
 ];
@@ -55,12 +79,16 @@ const randomChoice = (arr) => arr[Math.floor(Math.random() * arr.length)];
 const randomDate = (start, end) => new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime())).toISOString();
 const now = new Date();
 
-const firstNames = ['James','Mary','John','Patricia','Robert','Jennifer','Michael','Linda','William','Elizabeth','David','Barbara','Richard','Susan','Joseph','Jessica','Thomas','Sarah','Charles','Karen'];
-const lastNames = ['Smith','Johnson','Williams','Brown','Jones','Garcia','Miller','Davis','Rodriguez','Martinez','Hernandez','Lopez','Gonzalez','Wilson','Anderson','Thomas','Taylor','Moore','Jackson','Martin'];
-const companies = ['Acme Corp', 'Globex', 'Soylent', 'Initech', 'Umbrella', 'Stark Ind.', 'Wayne Ent', 'Massive Dynamic', 'Hooli', 'Pied Piper', 'Dunder Mifflin', 'Cyberdyne', 'Oscorp', 'Weyland-Yutani', 'Gringotts'];
-const rolesCamp1 = ['CHRO', 'VP HR', 'Head of People', 'Director of HR'];
-const rolesCamp2 = ['CFO', 'VP Finance', 'Director of Finance'];
-const rolesCamp3 = ['VP Engineering', 'CTO', 'Head of Engineering'];
+const firstNames = ['James','Sarah','John','Patricia','Robert','Jennifer','Michael','Linda','William','Elizabeth','David','Barbara','Richard','Susan','Joseph','Jessica','Thomas','Priya','Charles','Rahul','Ananya','Vikram','Maya','Arjun'];
+const lastNames = ['Smith','Johnson','Williams','Brown','Jones','Garcia','Miller','Davis','Rodriguez','Patel','Sharma','Chen','Gupta','Kumar','Mehta','Shah','Nair','Reddy','Anderson','Taylor'];
+
+const companiesCamp1 = ['Rippling', 'Carta', 'Brex', 'Descript', 'Loom', 'Retool', 'Linear', 'Notion', 'Figma Clone', 'Vercel', 'PlanetScale', 'Supabase', 'Render', 'Railway'];
+const companiesCamp2 = ['HDFC Bank', 'ICICI Bank', 'Axis Bank', 'Kotak Mahindra', 'SBI Life', 'Bajaj Finance', 'IIFL Finance', 'Muthoot Finance', 'Shriram Finance', 'L&T Finance', 'PNB Housing'];
+const companiesCamp3 = ['Kore.ai', 'Deepgram', 'ElevenLabs', 'Voiceflow', 'Vapi', 'Retell AI', 'Bland AI', 'Hamming AI', 'Air AI', 'Cognigy', 'Nuance', 'Synthesis AI'];
+
+const rolesCamp1 = ['CTO', 'VP of Engineering', 'Head of Engineering', 'Director of Engineering', 'Principal Engineer'];
+const rolesCamp2 = ['CIO', 'CDO', 'CTO', 'VP Technology', 'Head of Digital Transformation', 'Chief Digital Officer'];
+const rolesCamp3 = ['CEO', 'CTO', 'Co-Founder', 'Founder', 'Head of Product'];
 
 const replyTexts = [
   'Sounds interesting, can we chat next week?',
@@ -71,7 +99,7 @@ const replyTexts = [
   'We already have a vendor for this. Thanks though.',
 ];
 const replyIntents = ['interested', 'meeting_request', 'question', 'not_now', 'referral', 'not_interested'];
-const knowledgeChunks = ['Product Specs v4.2', 'Greenhouse API Integration Checklist', 'Objection Handling Script', 'Competitor Comparison Grid', 'Enterprise HR Playbook'];
+const knowledgeChunks = ['Product Specs v4.2', 'Case Study: Rippling Implementation', 'Objection Handling Script', 'Competitor Comparison Grid', 'ICP Definition v3', 'BFSI Regulatory Playbook', 'Voice AI Founder Deck'];
 
 let _allProspects = [];
 let _agentRuns = [];
@@ -82,8 +110,9 @@ let _escalations = [];
 // ── Generate prospects ──
 for (const camp of _campaigns) {
   const t = CAMPAIGN_TARGETS[camp.id];
-  const prospectCount = randomInt(40, 60);
+  const prospectCount = randomInt(45, 60);
   const roles = camp.id === 'camp_1' ? rolesCamp1 : (camp.id === 'camp_2' ? rolesCamp2 : rolesCamp3);
+  const companies = camp.id === 'camp_1' ? companiesCamp1 : (camp.id === 'camp_2' ? companiesCamp2 : companiesCamp3);
 
   for (let i = 0; i < prospectCount; i++) {
     const id = `pro_${camp.id}_${i}`;
@@ -95,7 +124,7 @@ for (const camp of _campaigns) {
     const stageIdx = FUNNEL_STAGES.indexOf(stage);
     const score = randomInt(20, 95);
 
-    // ── Three-state ICP verdict ──
+    // Three-state ICP verdict
     const icp_status = score > 65 ? 'qualify' : (score >= 40 ? 'needs_review' : 'reject');
     const icp_confidence = score > 65 ? 'high' : (score >= 40 ? 'low' : 'medium');
     const icp_reasoning = score > 65
@@ -104,14 +133,13 @@ for (const camp of _campaigns) {
         ? 'Critical data missing or ambiguous — company size unverified, seniority unclear. Manual review recommended.'
         : 'Does not meet minimum ICP criteria. Industry mismatch and insufficient seniority.');
 
-    const last_touch = randomDate(new Date(now.getTime() - 7*86400000), now);
-    const next_touch = randomDate(now, new Date(now.getTime() + 7*86400000));
+    const last_touch = randomDate(new Date(now.getTime() - 7 * 86400000), now);
+    const next_touch = randomDate(now, new Date(now.getTime() + 7 * 86400000));
 
-    // ── Rich timeline events based on funnel stage ──
+    // Rich timeline events based on funnel stage
     let timeline = [];
     const baseTime = now.getTime() - (stageIdx + 3) * 86400000;
 
-    // Stage 0+: discovered
     timeline.push({
       type: 'discovered', agent: null, agent_engine: null, prompt_version: null,
       tokens_used: 0, cost: 0,
@@ -119,71 +147,64 @@ for (const camp of _campaigns) {
       details: {}, knowledge_chunks: [],
     });
 
-    // Stage 1+: researched
     if (stageIdx >= 1) {
       const tIn = randomInt(800, 1500);
       const tOut = randomInt(200, 500);
       const cost = parseFloat(((tIn + tOut) * 0.000015).toFixed(4));
       timeline.push({
-        type: 'researched', agent: 'Research & Enrichment', agent_engine: 'dronahq', prompt_version: 'v2',
+        type: 'researched', agent: 'Lead Research Agent', agent_engine: 'dronahq', prompt_version: 'v2',
         tokens_used: tIn + tOut, cost,
         timestamp: new Date(baseTime + 86400000).toISOString(),
         details: { signals_found: randomInt(2, 6) }, knowledge_chunks: [],
       });
     }
 
-    // Stage 2+: ICP scored
     if (stageIdx >= 2) {
       const tIn = randomInt(400, 800);
       const tOut = randomInt(100, 300);
       const cost = parseFloat(((tIn + tOut) * 0.000015).toFixed(4));
       timeline.push({
         type: icp_status === 'qualify' ? 'qualified' : (icp_status === 'needs_review' ? 'needs_review' : 'rejected'),
-        agent: 'ICP Fitment', agent_engine: 'dronahq', prompt_version: 'v4',
+        agent: 'ICP Fitment Agent', agent_engine: 'dronahq', prompt_version: 'v4',
         tokens_used: tIn + tOut, cost,
-        timestamp: new Date(baseTime + 2*86400000).toISOString(),
+        timestamp: new Date(baseTime + 2 * 86400000).toISOString(),
         details: { verdict: icp_status, reason: `Score: ${score}. ${icp_reasoning}` },
-        knowledge_chunks: ['ICP Guidelines v2'],
+        knowledge_chunks: ['ICP Definition v3'],
       });
     }
 
-    // Stage 3+: strategy created + message sent
     if (stageIdx >= 3) {
       const tIn1 = randomInt(500, 900);
       const tOut1 = randomInt(150, 400);
-      const cost1 = parseFloat(((tIn1 + tOut1) * 0.000015).toFixed(4));
       timeline.push({
-        type: 'strategy_created', agent: 'Outreach Strategy', agent_engine: 'dronahq', prompt_version: 'v1',
-        tokens_used: tIn1 + tOut1, cost: cost1,
-        timestamp: new Date(baseTime + 2.5*86400000).toISOString(),
+        type: 'strategy_created', agent: 'Outreach Strategy Agent', agent_engine: 'dronahq', prompt_version: 'v1',
+        tokens_used: tIn1 + tOut1, cost: parseFloat(((tIn1 + tOut1) * 0.000015).toFixed(4)),
+        timestamp: new Date(baseTime + 2.5 * 86400000).toISOString(),
         details: {}, knowledge_chunks: [],
       });
 
       const tIn2 = randomInt(600, 1200);
       const tOut2 = randomInt(200, 500);
-      const cost2 = parseFloat(((tIn2 + tOut2) * 0.000015).toFixed(4));
       timeline.push({
-        type: 'contacted', agent: 'Personalisation & Send', agent_engine: 'dronahq', prompt_version: 'v4',
-        tokens_used: tIn2 + tOut2, cost: cost2,
-        timestamp: new Date(baseTime + 3*86400000).toISOString(),
+        type: 'contacted', agent: 'Personalisation Agent', agent_engine: 'dronahq', prompt_version: 'v4',
+        tokens_used: tIn2 + tOut2, cost: parseFloat(((tIn2 + tOut2) * 0.000015).toFixed(4)),
+        timestamp: new Date(baseTime + 3 * 86400000).toISOString(),
         details: {
-          subject: `Scaling ${company}'s ${camp.id === 'camp_1' ? 'HR' : (camp.id === 'camp_2' ? 'finance' : 'engineering')} operations`,
-          message_text: `Hi ${fname},\n\nI noticed ${company} recently expanded and your team is growing fast. We help companies like yours streamline operations at scale.\n\nWould 15 minutes next week work to explore if there's a fit?\n\nBest,\nNishu`,
+          subject: `Scaling ${company}'s ${camp.id === 'camp_1' ? 'engineering velocity' : (camp.id === 'camp_2' ? 'digital infrastructure' : 'voice AI platform')}`,
+          message_text: `Hi ${fname},\n\nI noticed ${company} recently ${randomChoice(['expanded their engineering team', 'announced a new product line', 'published a technical blog on scaling challenges'])}. We help companies like yours streamline their ${camp.id === 'camp_1' ? 'engineering operations' : (camp.id === 'camp_2' ? 'technology modernisation' : 'AI deployment')} at scale.\n\nWould 15 minutes next week work to explore if there's a fit?\n\nBest,\nKriti`,
         },
         knowledge_chunks: [randomChoice(knowledgeChunks), randomChoice(knowledgeChunks)],
       });
     }
 
-    // Stage 4+: reply received
     if (stageIdx >= 4) {
       const replyIdx = randomInt(0, replyTexts.length - 1);
       const tIn = randomInt(300, 600);
       const tOut = randomInt(80, 200);
-      const cost = parseFloat(((tIn + tOut) * 0.000015).toFixed(4));
       timeline.push({
-        type: 'replied', agent: 'Conversation', agent_engine: 'dronahq', prompt_version: 'v2',
-        tokens_used: tIn + tOut, cost,
-        timestamp: new Date(baseTime + 4*86400000).toISOString(),
+        type: 'replied', agent: 'Conversation Agent', agent_engine: 'dronahq', prompt_version: 'v2',
+        tokens_used: tIn + tOut, cost: parseFloat(((tIn + tOut) * 0.000015).toFixed(4)),
+        timestamp: new Date(baseTime + 4 * 86400000).toISOString(),
         details: {
           reply_text: replyTexts[replyIdx],
           detected_intent: replyIntents[Math.min(replyIdx, replyIntents.length - 1)],
@@ -192,47 +213,47 @@ for (const camp of _campaigns) {
       });
     }
 
-    // Stage 5+: meeting booked
     if (stageIdx >= 5) {
       timeline.push({
-        type: 'meeting_booked', agent: 'Follow-up Timing', agent_engine: 'our_engine', prompt_version: null,
+        type: 'meeting_booked', agent: 'Follow-up Agent', agent_engine: 'our_engine', prompt_version: null,
         tokens_used: 0, cost: 0,
-        timestamp: new Date(baseTime + 5*86400000).toISOString(),
-        details: {}, knowledge_chunks: [],
+        timestamp: new Date(baseTime + 5 * 86400000).toISOString(),
+        details: { meeting_time: new Date(now.getTime() + randomInt(1, 5) * 86400000).toISOString() },
+        knowledge_chunks: [],
       });
     }
 
-    // Stage 6: opportunity
     if (stageIdx >= 6) {
       timeline.push({
         type: 'opportunity', agent: null, agent_engine: null, prompt_version: null,
         tokens_used: 0, cost: 0,
-        timestamp: new Date(baseTime + 6*86400000).toISOString(),
-        details: {}, knowledge_chunks: [],
+        timestamp: new Date(baseTime + 6 * 86400000).toISOString(),
+        details: { opportunity_value: randomInt(15000, 80000) },
+        knowledge_chunks: [],
       });
     }
 
-    // ── Agent runs (for cost/health computation) ──
-    const agentNames = ['Research & Enrichment', 'ICP Fitment', 'Outreach Strategy', 'Personalisation & Send', 'Conversation'];
+    // Agent runs
+    const agentNames = ['Lead Research Agent', 'ICP Fitment Agent', 'Outreach Strategy Agent', 'Personalisation Agent', 'Conversation Agent'];
     const runsPerProspect = randomInt(2, 5);
     for (let r = 0; r < runsPerProspect; r++) {
       const aName = agentNames[r % agentNames.length];
       const tIn = randomInt(300, 1500);
       const tOut = randomInt(50, 400);
-      const failed = Math.random() < 0.03; // 3% failure rate
+      const failed = Math.random() < 0.03;
       _agentRuns.push({
         id: `run_${id}_${r}`,
         prospect_id: id,
         campaign_id: camp.id,
         agent_name: aName,
-        engine: aName === 'Follow-up Timing' ? 'our_engine' : 'dronahq',
+        engine: 'dronahq',
         tokens_in: tIn,
         tokens_out: tOut,
         cost_usd: parseFloat(((tIn + tOut) * 0.000015).toFixed(4)),
         latency_ms: randomInt(600, 3500),
         status: failed ? 'failed' : 'success',
         prompt_version: 'v' + randomInt(1, 4),
-        timestamp: randomDate(new Date(now.getTime() - 3*86400000), now),
+        timestamp: randomDate(new Date(now.getTime() - 3 * 86400000), now),
       });
     }
 
@@ -242,15 +263,18 @@ for (const camp of _campaigns) {
       campaign_name: camp.name,
       first_name: fname,
       last_name: lname,
-      email: `${fname.toLowerCase()}.${lname.toLowerCase()}@example.com`,
-      company: company,
-      role: role,
+      email: `${fname.toLowerCase()}.${lname.toLowerCase()}@${company.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`,
+      company,
+      role,
       funnel_status: stage,
       fit_score: score,
       fit_reason: icp_reasoning,
-      last_touch: last_touch,
-      next_touch: next_touch,
+      last_touch,
+      next_touch,
       timeline,
+      intent_score: randomInt(30, 95),
+      authority_score: randomInt(40, 100),
+      urgency_score: randomInt(20, 90),
       icp_verdict: {
         status: icp_status,
         fit_score: score,
@@ -272,29 +296,57 @@ for (const camp of _campaigns) {
         phone: 'crm',
       },
       facts: [
-        { text: randomChoice(['Recently raised Series B funding', 'Expanding to 3 new markets', 'Hiring 20+ engineers this quarter', 'New CTO appointed last month']), source: randomChoice(['Crunchbase', 'LinkedIn', 'Company Blog', 'News API']), tag: 'ai_enriched' },
-        score > 50 ? { text: 'Previously used competitor product', source: 'CRM Import', tag: 'crm' } : null,
+        { text: randomChoice(['Recently raised Series B funding', 'Expanding to 3 new markets', 'Hiring 20+ engineers this quarter', 'New CTO appointed last month', 'Announced AI-first strategy', 'Published technical blog on scaling']), source: randomChoice(['Crunchbase', 'LinkedIn', 'Company Blog', 'News API']), tag: 'ai_enriched' },
+        score > 50 ? { text: 'Previously evaluated competitor product', source: 'CRM Import', tag: 'crm' } : null,
       ].filter(Boolean),
+      ai_summary: `${fname} ${lname} is a ${role} at ${company}. ${icp_reasoning} ${score > 65 ? `This prospect shows strong intent signals and is a high-priority target for ${camp.name}.` : score >= 40 ? `Recommend manual review before proceeding with outreach.` : `Does not meet ICP criteria — consider suppressing from this campaign.`}`,
+      recommended_next_action: score > 65
+        ? (stage === 'engaged' ? 'Schedule a discovery call — prospect showed interest in last interaction.' : stage === 'contacted' ? 'Send follow-up email with case study.' : 'Continue automated sequence.')
+        : score >= 40
+        ? 'Review ICP qualification manually before next outreach.'
+        : 'Remove from campaign — below minimum ICP threshold.',
     });
   }
 
-  // ── Activity feeds ──
+  // Activity feeds
   if (camp.status === 'live') {
-    const allAgents = ['Research & Enrichment', 'ICP Fitment', 'Outreach Strategy', 'Personalisation & Send', 'Conversation', 'Follow-up Timing'];
-    const outcomes = [
-      'Qualified prospect with score 85.', 'Sent personalised email via Email.', 'Found 3 new hiring signals.',
-      'Drafted follow-up sequence.', 'Classified reply as interested.', 'Scheduled follow-up for Tuesday.',
-      'Rejected prospect — industry mismatch.', 'Escalated: missing company data, needs review.',
+    const activityTemplates = [
+      { agent: 'Lead Research Agent', outcomes: ['Found 3 new hiring signals at {company}', 'Enriched profile with LinkedIn data', 'Discovered recent funding round — $12M Series A', 'Added 4 new intent signals from job postings'] },
+      { agent: 'ICP Fitment Agent', outcomes: ['Qualified prospect with score 87 — strong ICP match', 'Marked as needs_review — company size unverified', 'Rejected prospect — industry mismatch', 'Qualified 5 prospects in batch run'] },
+      { agent: 'Outreach Strategy Agent', outcomes: ['Designed 3-touch email sequence', 'Recommended LinkedIn first-touch based on prospect activity', 'Created personalised opening hook', 'Scheduled follow-up for Day 4'] },
+      { agent: 'Personalisation Agent', outcomes: ['Generated email referencing recent blog post', 'Created personalised LinkedIn message', 'Escalated — insufficient data to personalise', 'Drafted email using 3 knowledge chunks'] },
+      { agent: 'Conversation Agent', outcomes: ['Classified reply as meeting_request — routing to calendar', 'Detected objection: pricing — suggested response', 'Classified reply as not_now — scheduled Q2 follow-up', 'Escalated objection to human review'] },
+      { agent: 'Follow-up Agent', outcomes: ['Scheduled Day 3 follow-up for {name}', 'Paused sequence — prospect in DNC list', 'Triggered re-engagement after 14-day silence', 'Booked meeting slot at prospect preference'] },
+      { agent: 'Voice SDR Agent', outcomes: ['Completed 2-minute discovery call', 'Left voicemail with personalised hook', 'Prospect answered — escalated to human SDR', 'Scheduled callback for tomorrow 2pm'] },
     ];
-    for (let a = 0; a < 18; a++) {
+
+    for (let a = 0; a < 20; a++) {
+      const template = randomChoice(activityTemplates);
+      const prospect = randomChoice(_allProspects.filter(p => p.campaign_id === camp.id));
+      const outcome = template.outcomes[Math.floor(Math.random() * template.outcomes.length)]
+        .replace('{company}', prospect?.company || 'Acme Corp')
+        .replace('{name}', `${prospect?.first_name} ${prospect?.last_name}` || 'Prospect');
+
       _activities.push({
         id: `act_${camp.id}_${a}`,
         campaign_id: camp.id,
-        agent: randomChoice(allAgents),
-        prospect_name: `${randomChoice(firstNames)} ${randomChoice(lastNames)}`,
-        outcome: randomChoice(outcomes),
-        status: Math.random() > 0.08 ? 'success' : 'error',
+        agent: template.agent,
+        prospect_id: prospect?.id,
+        prospect_name: `${prospect?.first_name} ${prospect?.last_name}`,
+        prospect_company: prospect?.company,
+        outcome,
+        status: Math.random() > 0.06 ? 'success' : 'error',
         timestamp: randomDate(new Date(now.getTime() - 86400000), now),
+        details: {
+          agent: template.agent,
+          reason: `Triggered by ${randomChoice(['pipeline event', 'prospect reply', 'scheduled timer', 'ICP score threshold'])}`,
+          data_used: randomChoice(['LinkedIn profile, Crunchbase data', 'CRM history, email open data', 'Job posting signals, funding data']),
+          knowledge_sources: [randomChoice(knowledgeChunks)],
+          prompt_version: 'v' + randomInt(1, 4),
+          confidence: randomInt(72, 98),
+          action_taken: outcome,
+          next_action: randomChoice(['Send follow-up in 3 days', 'Await prospect reply', 'Escalate to human review', 'Schedule meeting']),
+        },
       });
     }
   }
@@ -302,163 +354,311 @@ for (const camp of _campaigns) {
 
 _activities.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-// ── Escalations with human-readable names ──
+// ── Escalations ──
 _escalations = [
   {
-    id: 'esc_1', campaign_id: 'camp_1', campaign_name: 'Enterprise HR Tech Outreach',
-    prospect_id: 'pro_camp_1_0', prospect_name: `${_allProspects.find(p => p.id === 'pro_camp_1_0')?.first_name || 'James'} ${_allProspects.find(p => p.id === 'pro_camp_1_0')?.last_name || 'Smith'}`,
-    source_agent: 'ICP Fitment', escalation_type: 'needs_review',
-    reason: 'needs_review', proposed_action: 'Prospect score is 45 due to ambiguous company size. Company employee count not found in any source. Proceed with qualification or reject?',
-    status: 'pending', created_at: new Date(now.getTime() - 3600000).toISOString(),
+    id: 'esc_1', campaign_id: 'camp_1', campaign_name: 'US SaaS CTO Outreach',
+    prospect_id: 'pro_camp_1_0',
+    prospect_name: `${_allProspects.find(p => p.id === 'pro_camp_1_0')?.first_name || 'Sarah'} ${_allProspects.find(p => p.id === 'pro_camp_1_0')?.last_name || 'Chen'}`,
+    source_agent: 'ICP Fitment Agent', escalation_type: 'needs_review',
+    reason: 'needs_review',
+    proposed_action: 'Prospect score is 48 due to ambiguous company size. Company employee count not found in any data source. Recommend manual verification before proceeding with outreach.',
+    status: 'pending', risk_level: 'medium',
+    created_at: new Date(now.getTime() - 3600000).toISOString(),
   },
   {
-    id: 'esc_2', campaign_id: 'camp_2', campaign_name: 'Mid-Market CFO Campaign',
-    prospect_id: 'pro_camp_2_1', prospect_name: `${_allProspects.find(p => p.id === 'pro_camp_2_1')?.first_name || 'Mary'} ${_allProspects.find(p => p.id === 'pro_camp_2_1')?.last_name || 'Johnson'}`,
-    source_agent: 'Outreach Strategy', escalation_type: 'escalate_to_human',
-    reason: 'escalate_to_human', proposed_action: 'Prospect has opted out of previous campaigns. Prior negative response detected in thread history. Requesting human override to pause all outreach to this prospect.',
-    status: 'pending', created_at: new Date(now.getTime() - 7200000).toISOString(),
+    id: 'esc_2', campaign_id: 'camp_2', campaign_name: 'India BFSI CIO Outreach',
+    prospect_id: 'pro_camp_2_1',
+    prospect_name: `${_allProspects.find(p => p.id === 'pro_camp_2_1')?.first_name || 'Vikram'} ${_allProspects.find(p => p.id === 'pro_camp_2_1')?.last_name || 'Mehta'}`,
+    source_agent: 'Outreach Strategy Agent', escalation_type: 'escalate_to_human',
+    reason: 'escalate_to_human',
+    proposed_action: 'Prospect has opted out of a previous campaign. Prior negative response detected in thread history. Requesting human override to pause all outreach to this prospect.',
+    status: 'pending', risk_level: 'high',
+    created_at: new Date(now.getTime() - 7200000).toISOString(),
   },
   {
-    id: 'esc_3', campaign_id: 'camp_3', campaign_name: 'SaaS Dev Tools – Tech Leaders',
-    prospect_id: 'pro_camp_3_2', prospect_name: `${_allProspects.find(p => p.id === 'pro_camp_3_2')?.first_name || 'John'} ${_allProspects.find(p => p.id === 'pro_camp_3_2')?.last_name || 'Williams'}`,
-    source_agent: 'Personalisation & Send', escalation_type: 'needs_human',
-    reason: 'needs_human', proposed_action: 'Subject: Scaling your engineering team\n\nHi John,\n\nI noticed your recent blog post about Kubernetes scaling challenges at Initech. I drafted this response but felt it relies on a product claim I couldn\'t verify from the knowledge base. Please review before sending.\n\nBest,\nNishu',
-    status: 'pending', created_at: new Date(now.getTime() - 1800000).toISOString(),
+    id: 'esc_3', campaign_id: 'camp_3', campaign_name: 'Voice AI Founder Outreach',
+    prospect_id: 'pro_camp_3_2',
+    prospect_name: `${_allProspects.find(p => p.id === 'pro_camp_3_2')?.first_name || 'Priya'} ${_allProspects.find(p => p.id === 'pro_camp_3_2')?.last_name || 'Sharma'}`,
+    source_agent: 'Personalisation Agent', escalation_type: 'needs_human',
+    reason: 'needs_human',
+    proposed_action: 'Subject: Scaling your voice AI platform\n\nHi Priya,\n\nI noticed your recent blog post about latency challenges in real-time voice AI. I drafted a personalised response but felt it relies on a product claim I couldn\'t verify from the knowledge base. Please review before sending.\n\nBest,\nKriti',
+    status: 'pending', risk_level: 'low',
+    created_at: new Date(now.getTime() - 1800000).toISOString(),
+  },
+  {
+    id: 'esc_4', campaign_id: 'camp_1', campaign_name: 'US SaaS CTO Outreach',
+    prospect_id: 'pro_camp_1_5',
+    prospect_name: 'David Rodriguez',
+    source_agent: 'Conversation Agent', escalation_type: 'needs_human',
+    reason: 'objection_detected',
+    proposed_action: 'Prospect replied with a pricing objection. Conversation Agent suggests: "Our enterprise tier starts at $1,200/month with a 30-day pilot." Please approve before sending.',
+    status: 'pending', risk_level: 'medium',
+    created_at: new Date(now.getTime() - 900000).toISOString(),
   },
 ];
 
 let _systemControl = {
   kill_switch: false,
   channel_pauses: { email: false, linkedin: false, sms: false, voice: false },
+  agent_pauses: {
+    'ICP Fitment Agent': false,
+    'Lead Research Agent': false,
+    'Outreach Strategy Agent': false,
+    'Personalisation Agent': false,
+    'Conversation Agent': false,
+    'Voice SDR Agent': false,
+    'Follow-up Agent': false,
+  },
 };
 
 let _conflicts = [
-  { id: 'conf_1', prospect_name: 'Jane Doe', prospect_id: 'pro_camp_1_5', campaigns: ['Enterprise HR Tech Outreach', 'Mid-Market CFO Campaign'], campaign_ids: ['camp_1', 'camp_2'], last_touch: new Date().toISOString(), rule: 'Priority Campaign Wins', status: 'pending' },
-  { id: 'conf_2', prospect_name: 'Bob Smith', prospect_id: 'pro_camp_3_3', campaigns: ['SaaS Dev Tools – Tech Leaders', 'Enterprise HR Tech Outreach'], campaign_ids: ['camp_3', 'camp_1'], last_touch: new Date().toISOString(), rule: 'Earliest Claim Wins', status: 'pending' },
-  { id: 'conf_3', prospect_name: 'Alice Johnson', prospect_id: 'pro_camp_2_7', campaigns: ['Mid-Market CFO Campaign', 'SaaS Dev Tools – Tech Leaders'], campaign_ids: ['camp_2', 'camp_3'], last_touch: new Date().toISOString(), rule: 'Manual Review Required', status: 'pending' },
+  {
+    id: 'conf_1', prospect_name: 'Sarah Chen', prospect_id: 'pro_camp_1_5',
+    campaigns: ['US SaaS CTO Outreach', 'Voice AI Founder Outreach'],
+    campaign_ids: ['camp_1', 'camp_3'],
+    last_touch: new Date().toISOString(), rule: 'Priority Campaign Wins', status: 'pending',
+    reason: 'Prospect appears in both campaigns. CTO role qualifies for US SaaS CTO Outreach. Also tagged as AI Founder.',
+  },
+  {
+    id: 'conf_2', prospect_name: 'Rahul Patel', prospect_id: 'pro_camp_3_3',
+    campaigns: ['Voice AI Founder Outreach', 'India BFSI CIO Outreach'],
+    campaign_ids: ['camp_3', 'camp_2'],
+    last_touch: new Date().toISOString(), rule: 'Earliest Claim Wins', status: 'pending',
+    reason: 'Prospect is a founder in both Voice AI and BFSI space. Dual outreach risk.',
+  },
+  {
+    id: 'conf_3', prospect_name: 'Ananya Gupta', prospect_id: 'pro_camp_2_7',
+    campaigns: ['India BFSI CIO Outreach', 'US SaaS CTO Outreach'],
+    campaign_ids: ['camp_2', 'camp_1'],
+    last_touch: new Date().toISOString(), rule: 'Manual Review Required', status: 'pending',
+    reason: 'Prospect has dual role — CIO at Indian BFSI but also runs a SaaS subsidiary.',
+  },
 ];
 
-// ── Prompt versions (per campaign, per agent tab) ──
+// ── Prompt versions (per campaign) ──
 let _promptVersions = {
   'camp_1': [
-    // System Prompt
     {
-      id: 'pv_c1_s4', agent_name: 'System Prompt', version: 4, is_active: true, author: 'Nishu',
-      created_at: new Date(now.getTime() - 2*86400000).toISOString(),
-      content: 'Role: You are an SDR targeting Enterprise HR at Fortune 500s.\n\nVariables:\n- {{first_name}}: Prospect first name\n- {{company}}: Prospect company\n- {{recent_news}}: Recent company news/funding\n\nRules:\n1. Be concise, under 75 words.\n2. Do NOT use buzzwords like "synergy" or "alignment".\n3. Start with the recent news to show we did our research.\n\nOutput Schema:\n{\n  "subject": "string",\n  "body": "string",\n  "escalate": "boolean"\n}\n\nEscalation:\n- Return "needs_human" if company size is missing from context.',
+      id: 'pv_c1_s4', agent_name: 'System Prompt', version: 4, is_active: true, author: 'Kriti Jasuja',
+      approved_by: 'Kriti Jasuja',
+      created_at: new Date(now.getTime() - 2 * 86400000).toISOString(),
+      content: 'Role: You are an SDR targeting CTOs at US SaaS companies (Series B+).\n\nVariables:\n- {{first_name}}: Prospect first name\n- {{company}}: Prospect company\n- {{recent_news}}: Recent company news/funding\n- {{tech_stack}}: Known tech stack\n\nRules:\n1. Be concise, under 75 words.\n2. Do NOT use buzzwords like "synergy" or "alignment".\n3. Reference specific engineering challenges.\n4. Start with a concrete, verifiable signal.\n\nOutput Schema:\n{\n  "subject": "string",\n  "body": "string",\n  "escalate": "boolean"\n}\n\nEscalation:\n- Return "needs_human" if company size or tech stack is missing from context.',
     },
     {
-      id: 'pv_c1_s3', agent_name: 'System Prompt', version: 3, is_active: false, author: 'Nishu',
-      created_at: new Date(now.getTime() - 10*86400000).toISOString(),
-      content: 'Role: You are an SDR targeting Enterprise HR.\n\nVariables:\n- {{first_name}}: Prospect first name\n- {{company}}: Prospect company\n- {{recent_news}}: Recent company news\n\nRules:\n1. Keep it under 100 words.\n2. Start with the recent news to show we did our research.\n\nOutput Schema:\n{\n  "subject": "string",\n  "body": "string"\n}\n\nEscalation:\n- Return "needs_human" if company size is missing.',
+      id: 'pv_c1_s3', agent_name: 'System Prompt', version: 3, is_active: false, author: 'Kriti Jasuja',
+      approved_by: 'Kriti Jasuja',
+      created_at: new Date(now.getTime() - 10 * 86400000).toISOString(),
+      content: 'Role: You are an SDR targeting CTOs at SaaS companies.\n\nVariables:\n- {{first_name}}\n- {{company}}\n- {{recent_news}}\n\nRules:\n1. Keep it under 100 words.\n2. Start with the recent news.\n\nOutput Schema:\n{\n  "subject": "string",\n  "body": "string"\n}\n\nEscalation: Return "needs_human" if company size is missing.',
     },
     {
-      id: 'pv_c1_s2', agent_name: 'System Prompt', version: 2, is_active: false, author: 'Admin SDR',
-      created_at: new Date(now.getTime() - 20*86400000).toISOString(),
-      content: 'Role: You are an SDR targeting Enterprise HR.\n\nVariables:\n- {{first_name}}\n- {{company}}\n\nRules:\n1. Keep it under 100 words.\n2. Be friendly and polite.\n\nOutput Schema:\n{\n  "subject": "string",\n  "body": "string"\n}\n\nEscalation: none.',
+      id: 'pv_c1_s2', agent_name: 'System Prompt', version: 2, is_active: false, author: 'Aarav Singh',
+      approved_by: 'Kriti Jasuja',
+      created_at: new Date(now.getTime() - 20 * 86400000).toISOString(),
+      content: 'Role: You are an SDR targeting engineering leaders.\n\nVariables:\n- {{first_name}}\n- {{company}}\n\nRules:\n1. Keep it under 100 words.\n2. Be friendly and polite.\n\nOutput Schema:\n{\n  "subject": "string",\n  "body": "string"\n}\n\nEscalation: none.',
     },
     {
-      id: 'pv_c1_s1', agent_name: 'System Prompt', version: 1, is_active: false, author: 'Admin SDR',
-      created_at: new Date(now.getTime() - 30*86400000).toISOString(),
-      content: 'Role: You are an SDR.\n\nVariables:\n- {{first_name}}\n\nRules:\nBe friendly.\n\nOutput Schema:\n{ "body": "string" }\n\nEscalation: none.',
-    },
-    // Research Agent
-    {
-      id: 'pv_c1_r2', agent_name: 'Research Agent', version: 2, is_active: true, author: 'Nishu',
-      created_at: new Date(now.getTime() - 5*86400000).toISOString(),
-      content: 'Role: Research agent enriching prospect profiles.\n\nFocus areas:\n- Recent funding rounds\n- Hiring signals (engineering, HR)\n- Tech stack changes\n- Leadership changes\n\nSources: Klazify, Krust Data, LinkedIn.\n\nRules:\n1. Never guess — null is correct, invented is not.\n2. Record confidence per field.\n3. Cite sources for every fact.',
+      id: 'pv_c1_r2', agent_name: 'Lead Research Agent', version: 2, is_active: true, author: 'Kriti Jasuja',
+      approved_by: 'Kriti Jasuja',
+      created_at: new Date(now.getTime() - 5 * 86400000).toISOString(),
+      content: 'Role: Research agent enriching CTO prospect profiles.\n\nFocus areas:\n- Recent funding rounds and growth signals\n- Engineering team size and hiring velocity\n- Tech stack changes (GitHub, job posts)\n- Leadership changes\n- Published content (blogs, talks, papers)\n\nSources: Apollo, Klazify, LinkedIn, GitHub, Crunchbase.\n\nRules:\n1. Never guess — null is correct, invented is not.\n2. Record confidence per field.\n3. Cite sources for every fact.',
     },
     {
-      id: 'pv_c1_r1', agent_name: 'Research Agent', version: 1, is_active: false, author: 'Admin SDR',
-      created_at: new Date(now.getTime() - 15*86400000).toISOString(),
-      content: 'Role: Research agent.\n\nFocus: funding, hiring, tech stack.\n\nRules: Never guess. Cite sources.',
-    },
-    // ICP Agent
-    {
-      id: 'pv_c1_i2', agent_name: 'ICP Agent', version: 2, is_active: true, author: 'Nishu',
-      created_at: new Date(now.getTime() - 4*86400000).toISOString(),
-      content: 'Role: ICP scoring agent.\n\nDimensions:\n- Role match (CHRO, VP HR, Head of People)\n- Company size (5,000–10,000 employees)\n- Industry (Enterprise, Technology, SaaS)\n- Seniority (C-level, VP, Director)\n\nExclusions (immediate reject, score 0):\n- Government organisations\n- Companies under 100 employees\n- Existing customers\n\nVerdicts:\n- qualify: score >= 65, all critical dimensions met\n- needs_review: score 40-64 OR missing critical data\n- reject: score < 40 OR exclusion match\n\nTemperature: 0',
+      id: 'pv_c1_r1', agent_name: 'Lead Research Agent', version: 1, is_active: false, author: 'Aarav Singh',
+      approved_by: 'Kriti Jasuja',
+      created_at: new Date(now.getTime() - 15 * 86400000).toISOString(),
+      content: 'Role: Research agent.\nFocus: funding, hiring, tech stack.\nRules: Never guess. Cite sources.',
     },
     {
-      id: 'pv_c1_i1', agent_name: 'ICP Agent', version: 1, is_active: false, author: 'Admin SDR',
-      created_at: new Date(now.getTime() - 18*86400000).toISOString(),
-      content: 'Role: ICP scorer.\nDimensions: role, company size, industry.\nVerdicts: qualify or reject.\nTemperature: 0.',
-    },
-    // Personalisation Agent
-    {
-      id: 'pv_c1_p2', agent_name: 'Personalisation Agent', version: 2, is_active: true, author: 'Nishu',
-      created_at: new Date(now.getTime() - 3*86400000).toISOString(),
-      content: 'Role: Write one outbound message for one step.\n\nRules:\n1. Under 75 words.\n2. Every claim about the prospect must cite a real profile field.\n3. Every product claim must cite a knowledge chunk.\n4. Set needs_human when inputs are thin.\n5. Include personalisation_used[] with {claim, source_field}.\n6. Include knowledge_used[] with {claim, source}.',
+      id: 'pv_c1_i2', agent_name: 'ICP Fitment Agent', version: 2, is_active: true, author: 'Kriti Jasuja',
+      approved_by: 'Kriti Jasuja',
+      created_at: new Date(now.getTime() - 4 * 86400000).toISOString(),
+      content: 'Role: ICP scoring agent for US SaaS CTO campaign.\n\nDimensions:\n- Role match (CTO, VP Engineering, Head of Engineering)\n- Company stage (Series B+, $5M+ ARR)\n- Industry (SaaS, Dev Tools, Cloud Infrastructure)\n- Engineering team size (20+ engineers)\n\nExclusions (immediate reject, score 0):\n- Government organisations\n- Companies under 20 employees\n- Existing customers\n- Non-tech companies\n\nVerdicts:\n- qualify: score >= 65, all critical dimensions met\n- needs_review: score 40-64 OR missing critical data\n- reject: score < 40 OR exclusion match\n\nTemperature: 0',
     },
     {
-      id: 'pv_c1_p1', agent_name: 'Personalisation Agent', version: 1, is_active: false, author: 'Admin SDR',
-      created_at: new Date(now.getTime() - 22*86400000).toISOString(),
-      content: 'Role: Write outbound message.\nRules: Be concise. Personalise.',
+      id: 'pv_c1_p2', agent_name: 'Personalisation Agent', version: 2, is_active: true, author: 'Kriti Jasuja',
+      approved_by: 'Kriti Jasuja',
+      created_at: new Date(now.getTime() - 3 * 86400000).toISOString(),
+      content: 'Role: Write one outbound message for one step.\n\nRules:\n1. Under 75 words.\n2. Every claim about the prospect must cite a real profile field.\n3. Every product claim must cite a knowledge chunk.\n4. Set needs_human when inputs are thin.\n5. Include personalisation_used[] with {claim, source_field}.\n6. Include knowledge_used[] with {claim, source}.\n7. Never fabricate signals. Authentic > clever.',
     },
-    // Conversation Agent
     {
-      id: 'pv_c1_cv1', agent_name: 'Conversation Agent', version: 1, is_active: true, author: 'Nishu',
-      created_at: new Date(now.getTime() - 6*86400000).toISOString(),
+      id: 'pv_c1_cv1', agent_name: 'Conversation Agent', version: 1, is_active: true, author: 'Kriti Jasuja',
+      approved_by: 'Kriti Jasuja',
+      created_at: new Date(now.getTime() - 6 * 86400000).toISOString(),
       content: 'Role: Classify inbound replies.\n\nIntents: interested, meeting_request, question, objection, not_now, not_interested, opt_out, referral, wrong_person, auto_reply, bounce, unclear.\n\nRules:\n1. opt_out overrides every other reading.\n2. Extract facts from the reply.\n3. Identify questions and objections separately.\n4. Recommend action: respond, escalate, close, wait.',
     },
   ],
   'camp_2': [
     {
-      id: 'pv_c2_s1', agent_name: 'System Prompt', version: 1, is_active: true, author: 'Nishu',
-      created_at: new Date(now.getTime() - 5*86400000).toISOString(),
-      content: 'Role: Finance SDR targeting CFOs at mid-market fintech.\n\nVariables: {{first_name}}, {{company}}, {{revenue}}\n\nRules:\n1. Focus on ROI and cost savings.\n2. Under 80 words.\n\nOutput Schema: { "subject": "string", "body": "string" }\n\nEscalation: needs_human if revenue data missing.',
+      id: 'pv_c2_s2', agent_name: 'System Prompt', version: 2, is_active: true, author: 'Kriti Jasuja',
+      approved_by: 'Kriti Jasuja',
+      created_at: new Date(now.getTime() - 3 * 86400000).toISOString(),
+      content: 'Role: Finance & Technology SDR targeting CIOs at Indian BFSI institutions.\n\nVariables: {{first_name}}, {{company}}, {{regulation_context}}, {{digital_initiative}}\n\nRules:\n1. Focus on digital transformation, regulatory compliance, and cost efficiency.\n2. Under 80 words.\n3. Reference specific Indian BFSI context (RBI guidelines, NPCI, UPI).\n\nOutput Schema: { "subject": "string", "body": "string" }\n\nEscalation: needs_human if regulatory context is ambiguous.',
     },
     {
-      id: 'pv_c2_r1', agent_name: 'Research Agent', version: 1, is_active: true, author: 'Nishu',
-      created_at: new Date(now.getTime() - 5*86400000).toISOString(),
-      content: 'Role: Research agent for CFO outreach.\nFocus: revenue, funding, board changes, regulatory filings.\nRules: Never guess. Cite sources.',
+      id: 'pv_c2_s1', agent_name: 'System Prompt', version: 1, is_active: false, author: 'Aarav Singh',
+      approved_by: 'Kriti Jasuja',
+      created_at: new Date(now.getTime() - 10 * 86400000).toISOString(),
+      content: 'Role: BFSI SDR targeting CIOs.\nVariables: {{first_name}}, {{company}}\nRules: Focus on ROI and compliance. Under 80 words.\nOutput Schema: { "subject": "string", "body": "string" }',
     },
     {
-      id: 'pv_c2_i1', agent_name: 'ICP Agent', version: 1, is_active: true, author: 'Nishu',
-      created_at: new Date(now.getTime() - 5*86400000).toISOString(),
-      content: 'Role: ICP scorer for mid-market CFO campaign.\nDimensions: role (CFO, VP Finance), company size (200-2000), industry (Fintech, SaaS).\nVerdicts: qualify, needs_review, reject.',
+      id: 'pv_c2_r1', agent_name: 'Lead Research Agent', version: 1, is_active: true, author: 'Kriti Jasuja',
+      approved_by: 'Kriti Jasuja',
+      created_at: new Date(now.getTime() - 5 * 86400000).toISOString(),
+      content: 'Role: Research agent for BFSI CIO outreach.\nFocus: Digital transformation initiatives, RBI compliance updates, technology vendor relationships, board announcements.\nRules: Never guess. Cite sources.',
     },
     {
-      id: 'pv_c2_p1', agent_name: 'Personalisation Agent', version: 1, is_active: true, author: 'Nishu',
-      created_at: new Date(now.getTime() - 5*86400000).toISOString(),
-      content: 'Role: Write one finance-focused outbound message.\nRules: Lead with ROI. Under 80 words.',
-    },
-    {
-      id: 'pv_c2_cv1', agent_name: 'Conversation Agent', version: 1, is_active: true, author: 'Nishu',
-      created_at: new Date(now.getTime() - 5*86400000).toISOString(),
-      content: 'Role: Classify inbound CFO replies.\nIntents: interested, meeting_request, question, objection, not_now, not_interested, opt_out.\nRules: opt_out overrides all.',
+      id: 'pv_c2_i1', agent_name: 'ICP Fitment Agent', version: 1, is_active: true, author: 'Kriti Jasuja',
+      approved_by: 'Kriti Jasuja',
+      created_at: new Date(now.getTime() - 5 * 86400000).toISOString(),
+      content: 'Role: ICP scorer for India BFSI CIO campaign.\nDimensions: role (CIO, CDO, CTO), org type (Bank, Insurance, NBFC, Payment), AUM or revenue (>₹500 Cr).\nVerdicts: qualify, needs_review, reject.',
     },
   ],
   'camp_3': [
     {
-      id: 'pv_c3_s1', agent_name: 'System Prompt', version: 1, is_active: true, author: 'Nishu',
-      created_at: new Date(now.getTime() - 3*86400000).toISOString(),
-      content: 'Role: Dev tools SDR targeting VPs of Engineering.\n\nVariables: {{first_name}}, {{company}}, {{tech_stack}}\n\nRules:\n1. Reference their tech stack.\n2. Be technical but not salesy.\n3. Under 70 words.\n\nOutput Schema: { "subject": "string", "body": "string" }\n\nEscalation: needs_human if tech stack unknown.',
+      id: 'pv_c3_s2', agent_name: 'System Prompt', version: 2, is_active: true, author: 'Kriti Jasuja',
+      approved_by: 'Kriti Jasuja',
+      created_at: new Date(now.getTime() - 2 * 86400000).toISOString(),
+      content: 'Role: Voice AI SDR targeting founders of conversational AI startups.\n\nVariables: {{first_name}}, {{company}}, {{product_description}}, {{tech_challenge}}\n\nRules:\n1. Reference their specific voice AI product or technology challenge.\n2. Be technical and peer-to-peer in tone.\n3. Under 70 words.\n4. Mention a relevant technical insight.\n\nOutput Schema: { "subject": "string", "body": "string" }\n\nEscalation: needs_human if product description is missing or ambiguous.',
     },
     {
-      id: 'pv_c3_r1', agent_name: 'Research Agent', version: 1, is_active: true, author: 'Nishu',
-      created_at: new Date(now.getTime() - 3*86400000).toISOString(),
-      content: 'Role: Research agent for dev tools outreach.\nFocus: tech stack, engineering blog posts, GitHub activity, open roles.\nRules: Never guess. Cite sources.',
+      id: 'pv_c3_s1', agent_name: 'System Prompt', version: 1, is_active: false, author: 'Aarav Singh',
+      approved_by: 'Kriti Jasuja',
+      created_at: new Date(now.getTime() - 12 * 86400000).toISOString(),
+      content: 'Role: Dev tools SDR targeting founders.\nVariables: {{first_name}}, {{company}}\nRules: Be technical. Under 70 words.\nOutput Schema: { "subject": "string", "body": "string" }',
     },
     {
-      id: 'pv_c3_i1', agent_name: 'ICP Agent', version: 1, is_active: true, author: 'Nishu',
-      created_at: new Date(now.getTime() - 3*86400000).toISOString(),
-      content: 'Role: ICP scorer for dev tools campaign.\nDimensions: role (VP Eng, CTO), company stage (Series A-B), industry (Dev Tools, SaaS).\nVerdicts: qualify, needs_review, reject.',
+      id: 'pv_c3_r1', agent_name: 'Lead Research Agent', version: 1, is_active: true, author: 'Kriti Jasuja',
+      approved_by: 'Kriti Jasuja',
+      created_at: new Date(now.getTime() - 3 * 86400000).toISOString(),
+      content: 'Role: Research agent for Voice AI founder outreach.\nFocus: Product announcements, technical blog posts, GitHub activity, YC/investor affiliations, conference talks.\nRules: Never guess. Cite sources.',
     },
     {
-      id: 'pv_c3_p1', agent_name: 'Personalisation Agent', version: 1, is_active: true, author: 'Nishu',
-      created_at: new Date(now.getTime() - 3*86400000).toISOString(),
-      content: 'Role: Write one dev-tools-focused outbound message.\nRules: Reference tech stack. Be technical. Under 70 words.',
-    },
-    {
-      id: 'pv_c3_cv1', agent_name: 'Conversation Agent', version: 1, is_active: true, author: 'Nishu',
-      created_at: new Date(now.getTime() - 3*86400000).toISOString(),
-      content: 'Role: Classify inbound engineering leader replies.\nIntents: interested, meeting_request, question, objection, not_now, not_interested, opt_out.\nRules: opt_out overrides all.',
+      id: 'pv_c3_v1', agent_name: 'Voice SDR Agent', version: 1, is_active: true, author: 'Kriti Jasuja',
+      approved_by: 'Kriti Jasuja',
+      created_at: new Date(now.getTime() - 1 * 86400000).toISOString(),
+      content: 'Role: Voice SDR agent making outbound calls to Voice AI founders.\n\nScript:\n1. Identify yourself and Pigeon SDR.\n2. Reference specific technical context from research.\n3. State value prop in under 20 seconds.\n4. Ask for 15-minute discovery call.\n5. Handle objections using knowledge base.\n\nEscalation: Transfer to human if prospect is actively engaged and asking pricing questions.\n\nVoice: Friendly, technical, peer-to-peer. Not salesy.',
     },
   ],
 };
 
-// ── Helpers for computed metrics ──
+// ── Global agents state ──
+let _globalAgents = [
+  {
+    id: 'agent_icp', name: 'ICP Fitment Agent', key: 'icp_fitment', engine: 'dronahq',
+    status: 'running', paused: false,
+    current_task: 'Scoring 12 prospects from US SaaS CTO Outreach',
+    success_rate: 94, runs_today: 847, failures_today: 4,
+    last_action: 'Qualified Sarah Chen (score: 87) — US SaaS CTO Outreach',
+    last_action_at: new Date(now.getTime() - 300000).toISOString(),
+    description: 'Scores prospects against ICP dimensions. Returns qualify, needs_review, or reject verdicts with confidence scores.',
+  },
+  {
+    id: 'agent_research', name: 'Lead Research Agent', key: 'research', engine: 'dronahq',
+    status: 'running', paused: false,
+    current_task: 'Enriching 8 new prospects from Voice AI Founder Outreach',
+    success_rate: 97, runs_today: 623, failures_today: 1,
+    last_action: 'Enriched profile: Priya Sharma — found 4 intent signals',
+    last_action_at: new Date(now.getTime() - 120000).toISOString(),
+    description: 'Enriches prospect profiles with LinkedIn data, funding signals, hiring signals, tech stack, and recent news.',
+  },
+  {
+    id: 'agent_outreach', name: 'Outreach Strategy Agent', key: 'outreach_strategy', engine: 'dronahq',
+    status: 'idle', paused: false,
+    current_task: 'Waiting for ICP queue',
+    success_rate: 91, runs_today: 412, failures_today: 8,
+    last_action: 'Designed 3-touch sequence for 6 qualified prospects',
+    last_action_at: new Date(now.getTime() - 600000).toISOString(),
+    description: 'Determines optimal outreach sequence, timing, and channel mix per prospect based on research signals.',
+  },
+  {
+    id: 'agent_personal', name: 'Personalisation Agent', key: 'personalisation', engine: 'dronahq',
+    status: 'running', paused: false,
+    current_task: 'Writing emails for 6 prospects — US SaaS CTO Outreach',
+    success_rate: 89, runs_today: 389, failures_today: 12,
+    last_action: 'Generated personalised email for David Rodriguez using 3 knowledge chunks',
+    last_action_at: new Date(now.getTime() - 60000).toISOString(),
+    description: 'Writes personalised outreach messages grounded in prospect research and knowledge base content.',
+  },
+  {
+    id: 'agent_conversation', name: 'Conversation Agent', key: 'conversation', engine: 'dronahq',
+    status: 'running', paused: false,
+    current_task: 'Classifying 3 inbound replies',
+    success_rate: 96, runs_today: 127, failures_today: 2,
+    last_action: 'Detected meeting_request intent — routing to calendar booking',
+    last_action_at: new Date(now.getTime() - 180000).toISOString(),
+    description: 'Classifies inbound replies, detects intent, handles objections, and routes conversations appropriately.',
+  },
+  {
+    id: 'agent_voice', name: 'Voice SDR Agent', key: 'voice_sdr', engine: 'dronahq',
+    status: 'running', paused: false,
+    current_task: 'Active call: Rahul Patel — Voice AI Founder Outreach',
+    success_rate: 82, runs_today: 14, failures_today: 1,
+    last_action: 'Completed call with Ananya Gupta — booked discovery meeting',
+    last_action_at: new Date(now.getTime() - 900000).toISOString(),
+    description: 'Makes outbound voice calls, handles real-time conversations, and escalates to human SDRs when needed.',
+  },
+  {
+    id: 'agent_followup', name: 'Follow-up Agent', key: 'followup_timing', engine: 'our_engine',
+    status: 'idle', paused: false,
+    current_task: 'Scheduling 18 follow-ups across active campaigns',
+    success_rate: 99, runs_today: 203, failures_today: 0,
+    last_action: 'Scheduled Day 3 follow-up for 6 prospects — optimal send time 9am IST',
+    last_action_at: new Date(now.getTime() - 240000).toISOString(),
+    description: 'Manages follow-up timing and cadence. Determines optimal send times based on prospect engagement patterns.',
+  },
+];
+
+// ── Needs Attention Items ──
+const _needsAttentionItems = [
+  {
+    id: 'att_1', type: 'approval', priority: 'high',
+    title: 'Prompt approval pending',
+    description: 'Personalisation Agent v2.4 awaiting approval before deployment to US SaaS CTO Outreach.',
+    campaign: 'US SaaS CTO Outreach',
+    agent: 'Personalisation Agent',
+    action_url: '/review-queue',
+    created_at: new Date(now.getTime() - 900000).toISOString(),
+  },
+  {
+    id: 'att_2', type: 'conflict', priority: 'medium',
+    title: 'Prospect conflict detected',
+    description: 'Sarah Chen is targeted by 2 campaigns simultaneously. Resolve to prevent duplicate outreach.',
+    campaign: 'Multiple',
+    agent: null,
+    action_url: '/conflicts',
+    created_at: new Date(now.getTime() - 1800000).toISOString(),
+  },
+  {
+    id: 'att_3', type: 'escalation', priority: 'high',
+    title: 'Agent escalation: objection detected',
+    description: 'Conversation Agent flagged a pricing objection from David Rodriguez. Review suggested response.',
+    campaign: 'US SaaS CTO Outreach',
+    agent: 'Conversation Agent',
+    action_url: '/review-queue',
+    created_at: new Date(now.getTime() - 300000).toISOString(),
+  },
+  {
+    id: 'att_4', type: 'opportunity', priority: 'medium',
+    title: 'Follow-up opportunity',
+    description: 'Rahul Patel opened email 3 times in last 24h. Recommend immediate personalised follow-up.',
+    campaign: 'Voice AI Founder Outreach',
+    agent: 'Follow-up Agent',
+    action_url: '/prospects',
+    created_at: new Date(now.getTime() - 600000).toISOString(),
+  },
+  {
+    id: 'att_5', type: 'approval', priority: 'low',
+    title: 'Campaign activation pending',
+    description: 'India BFSI CIO Outreach is paused. Resume when ready to re-engage BFSI prospects.',
+    campaign: 'India BFSI CIO Outreach',
+    agent: null,
+    action_url: '/campaigns/camp_2',
+    created_at: new Date(now.getTime() - 3600000).toISOString(),
+  },
+];
+
+// ── Helpers ──
 function getRunsForCampaign(campId) {
   return _agentRuns.filter(r => r.campaign_id === campId);
 }
@@ -582,6 +782,23 @@ export const mockApi = {
     return _systemControl;
   },
 
+  async setAgentPause(agentKey, paused) {
+    await delay();
+    const agentName = Object.keys(_systemControl.agent_pauses).find(k =>
+      k.toLowerCase().replace(/ /g, '_') === agentKey ||
+      k === agentKey
+    );
+    if (agentName) {
+      _systemControl.agent_pauses[agentName] = paused;
+    }
+    const agent = _globalAgents.find(a => a.key === agentKey || a.name === agentKey);
+    if (agent) {
+      agent.paused = paused;
+      agent.status = paused ? 'paused' : 'idle';
+    }
+    return _systemControl;
+  },
+
   // ── Prompts ──
   async getCampaignPrompts(id) {
     await delay();
@@ -598,7 +815,8 @@ export const mockApi = {
       agent_name: data.agent_name || 'System Prompt',
       version: maxVersion + 1,
       is_active: false,
-      author: 'Nishu',
+      author: 'Kriti Jasuja',
+      approved_by: null,
       created_at: new Date().toISOString(),
       content: data.content || '',
     };
@@ -613,7 +831,6 @@ export const mockApi = {
     for (const pvList of Object.values(_promptVersions)) {
       const target = pvList.find(p => p.id === id);
       if (target) {
-        // Deactivate others in same campaign AND same agent
         pvList.filter(p => p.agent_name === target.agent_name).forEach(p => p.is_active = false);
         target.is_active = true;
         found = true;
@@ -667,21 +884,24 @@ export const mockApi = {
   // ── Metrics ──
   async getCampaignMetrics(id) {
     await delay();
-    const t = CAMPAIGN_TARGETS[id] || { prospects: 100, sent: 20, replies: 5, meetings: 1 };
+    const t = CAMPAIGN_TARGETS[id] || { prospects: 100, sent: 20, replies: 5, meetings: 1, pipeline_value: 50000 };
     const runs = getRunsForCampaign(id);
     const failures = runs.filter(r => r.status === 'failed').length;
     const pendingEsc = _escalations.filter(e => e.campaign_id === id && e.status === 'pending').length;
     const spend = parseFloat(runs.reduce((sum, r) => sum + parseFloat(r.cost_usd), 0).toFixed(2));
+    const successRate = runs.length > 0 ? Math.round(((runs.length - failures) / runs.length) * 100) : 97;
 
     const funnel = {
-      discovered: t.prospects - Math.floor(t.prospects * 0.8),
-      researched: Math.floor(t.prospects * 0.3),
-      qualified: Math.floor(t.prospects * 0.5) - t.sent,
-      contacted: t.sent - t.replies,
-      engaged: t.replies - t.meetings - Math.floor(t.replies * 0.2),
-      meeting: t.meetings - 1,
-      opportunity: 1,
+      discovered: t.prospects,
+      researched: Math.floor(t.prospects * 0.75),
+      qualified: Math.floor(t.prospects * 0.5),
+      contacted: t.sent,
+      engaged: t.replies,
+      meeting: t.meetings,
+      opportunity: Math.max(Math.floor(t.meetings * 0.6), 1),
     };
+
+    const progress = Math.round((t.sent / t.prospects) * 100);
 
     return {
       total_prospects: t.prospects,
@@ -691,15 +911,46 @@ export const mockApi = {
       replies: t.replies,
       meetings: t.meetings,
       meetings_booked: t.meetings,
+      pipeline_value: t.pipeline_value,
       response_rate: ((t.replies / t.sent) * 100).toFixed(1),
       meeting_rate: ((t.meetings / t.replies) * 100).toFixed(1),
+      qualified_lead_rate: ((funnel.qualified / t.prospects) * 100).toFixed(1),
       funnel,
-      // Health fields
+      progress,
+      // Health
       failures_today: failures,
       pending_approvals: pendingEsc,
       escalations: pendingEsc,
       agent_runs_today: runs.length,
       spend_today: spend,
+      agent_success_rate: successRate,
+    };
+  },
+
+  async getGlobalMetrics() {
+    await delay();
+    const allRuns = _agentRuns;
+    const failures = allRuns.filter(r => r.status === 'failed').length;
+    const successRate = allRuns.length > 0
+      ? Math.round(((allRuns.length - failures) / allRuns.length) * 100)
+      : 97;
+
+    const totalMeetings = Object.values(CAMPAIGN_TARGETS).reduce((sum, t) => sum + t.meetings, 0);
+    const totalPipeline = Object.values(CAMPAIGN_TARGETS).reduce((sum, t) => sum + t.pipeline_value, 0);
+    const totalProspects = _allProspects.length;
+    const activeProspects = _allProspects.filter(p => ['contacted', 'engaged', 'meeting'].includes(p.funnel_status)).length;
+    const liveCampaigns = _campaigns.filter(c => c.status === 'live').length;
+
+    return {
+      live_campaigns: liveCampaigns,
+      total_campaigns: _campaigns.length,
+      active_prospects: activeProspects,
+      total_prospects: totalProspects,
+      meetings_booked: totalMeetings,
+      pipeline_value: totalPipeline,
+      agent_success_rate: successRate,
+      pending_approvals: _escalations.filter(e => e.status === 'pending').length,
+      conflicts: _conflicts.filter(c => c.status === 'pending').length,
     };
   },
 
@@ -708,7 +959,12 @@ export const mockApi = {
     return _activities.filter(a => a.campaign_id === id);
   },
 
-  // ── Agents (all 7 with correct engine badges) ──
+  async getAllActivity() {
+    await delay();
+    return _activities.slice(0, 30);
+  },
+
+  // ── Agents ──
   async getAgentRuns(id) {
     await delay();
     const camp = _campaigns.find(c => c.id === id);
@@ -716,14 +972,40 @@ export const mockApi = {
     const countFor = (name) => runs.filter(r => r.agent_name === name).length;
     const failFor = (name) => runs.filter(r => r.agent_name === name && r.status === 'failed').length;
     return [
-      { name: 'Research & Enrichment', key: 'research', engine: 'dronahq', runs_today: countFor('Research & Enrichment') || 450, failures_today: failFor('Research & Enrichment') || 1, enabled: camp?.agents?.research ?? true },
-      { name: 'ICP Fitment', key: 'icp_fitment', engine: 'dronahq', runs_today: countFor('ICP Fitment') || 400, failures_today: failFor('ICP Fitment') || 3, enabled: camp?.agents?.icp_fitment ?? true },
-      { name: 'Outreach Strategy', key: 'outreach_strategy', engine: 'dronahq', runs_today: countFor('Outreach Strategy') || 380, failures_today: failFor('Outreach Strategy'), enabled: camp?.agents?.outreach_strategy ?? true },
-      { name: 'Personalisation & Send', key: 'personalisation', engine: 'dronahq', runs_today: countFor('Personalisation & Send') || 350, failures_today: failFor('Personalisation & Send'), enabled: camp?.agents?.personalisation ?? true },
-      { name: 'Conversation', key: 'conversation', engine: 'dronahq', runs_today: countFor('Conversation') || 120, failures_today: failFor('Conversation') || 2, enabled: camp?.agents?.conversation ?? true },
-      { name: 'Follow-up Timing', key: 'followup_timing', engine: 'our_engine', runs_today: 200, failures_today: 0, enabled: camp?.agents?.followup_timing ?? true },
-      { name: 'Voice SDR', key: 'voice_sdr', engine: 'dronahq', runs_today: 0, failures_today: 0, enabled: camp?.agents?.voice_sdr ?? false },
+      { name: 'Lead Research Agent', key: 'research', engine: 'dronahq', runs_today: countFor('Lead Research Agent') || 623, failures_today: failFor('Lead Research Agent') || 1, enabled: camp?.agents?.research ?? true },
+      { name: 'ICP Fitment Agent', key: 'icp_fitment', engine: 'dronahq', runs_today: countFor('ICP Fitment Agent') || 847, failures_today: failFor('ICP Fitment Agent') || 4, enabled: camp?.agents?.icp_fitment ?? true },
+      { name: 'Outreach Strategy Agent', key: 'outreach_strategy', engine: 'dronahq', runs_today: countFor('Outreach Strategy Agent') || 412, failures_today: failFor('Outreach Strategy Agent') || 8, enabled: camp?.agents?.outreach_strategy ?? true },
+      { name: 'Personalisation Agent', key: 'personalisation', engine: 'dronahq', runs_today: countFor('Personalisation Agent') || 389, failures_today: failFor('Personalisation Agent') || 12, enabled: camp?.agents?.personalisation ?? true },
+      { name: 'Conversation Agent', key: 'conversation', engine: 'dronahq', runs_today: countFor('Conversation Agent') || 127, failures_today: failFor('Conversation Agent') || 2, enabled: camp?.agents?.conversation ?? true },
+      { name: 'Follow-up Agent', key: 'followup_timing', engine: 'our_engine', runs_today: 203, failures_today: 0, enabled: camp?.agents?.followup_timing ?? true },
+      { name: 'Voice SDR Agent', key: 'voice_sdr', engine: 'dronahq', runs_today: 14, failures_today: 1, enabled: camp?.agents?.voice_sdr ?? false },
     ];
+  },
+
+  async getGlobalAgents() {
+    await delay();
+    return _globalAgents.map(a => ({
+      ...a,
+      paused: _systemControl.agent_pauses[a.name] || a.paused,
+    }));
+  },
+
+  // ── Needs Attention ──
+  async getNeedsAttention() {
+    await delay();
+    const items = [..._needsAttentionItems];
+    // Dynamic: add conflicts
+    const pendingConflicts = _conflicts.filter(c => c.status === 'pending').length;
+    const pendingEsc = _escalations.filter(e => e.status === 'pending').length;
+    return {
+      items,
+      summary: {
+        total: items.length,
+        high: items.filter(i => i.priority === 'high').length,
+        pending_approvals: pendingEsc,
+        pending_conflicts: pendingConflicts,
+      }
+    };
   },
 
   // ── Reps ──

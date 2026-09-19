@@ -2,8 +2,6 @@
  * API Index — unified export.
  * When VITE_API_BASE_URL is set, calls go through axios to the real backend.
  * When unset, calls go to the in-memory mock.
- *
- * To switch: set VITE_API_BASE_URL in your .env file.
  */
 import { apiClient, isUsingMockApi } from './client.js';
 import { mockApi } from './mock.js';
@@ -41,8 +39,14 @@ const api = {
   getCampaignMetrics: (id) =>
     withFallback('get', `/campaigns/${id}/metrics`, null, () => mockApi.getCampaignMetrics(id)),
 
+  getGlobalMetrics: () =>
+    withFallback('get', '/metrics/global', null, () => mockApi.getGlobalMetrics()),
+
   getCampaignActivity: (id) =>
     withFallback('get', `/campaigns/${id}/activity`, null, () => mockApi.getCampaignActivity(id)),
+
+  getAllActivity: () =>
+    withFallback('get', '/activity', null, () => mockApi.getAllActivity()),
 
   getCampaignProspects: (id) =>
     withFallback('get', `/campaigns/${id}/prospects`, null, () => mockApi.getCampaignProspects(id)),
@@ -88,6 +92,9 @@ const api = {
   setChannelPause: (channel, paused) =>
     withFallback('post', '/control/channel', { channel, paused }, () => mockApi.setChannelPause(channel, paused)),
 
+  setAgentPause: (agentKey, paused) =>
+    withFallback('post', '/control/agent', { agent: agentKey, paused }, () => mockApi.setAgentPause(agentKey, paused)),
+
   // ── Costs ──
   getCosts: () =>
     withFallback('get', '/costs', null, () => mockApi.getCosts()),
@@ -95,6 +102,13 @@ const api = {
   // ── Agent Runs ──
   getAgentRuns: (campaignId) =>
     withFallback('get', `/campaigns/${campaignId}/agents`, null, () => mockApi.getAgentRuns(campaignId)),
+
+  getGlobalAgents: () =>
+    withFallback('get', '/agents', null, () => mockApi.getGlobalAgents()),
+
+  // ── Needs Attention ──
+  getNeedsAttention: () =>
+    withFallback('get', '/attention', null, () => mockApi.getNeedsAttention()),
 
   // ── Reps ──
   getReps: () =>
