@@ -8,94 +8,100 @@
 import { apiClient, isUsingMockApi } from './client.js';
 import { mockApi } from './mock.js';
 
-function realApi(method, url, data) {
-  return apiClient({ method, url, data }).then(r => r.data);
+async function withFallback(method, url, data, mockFn) {
+  if (isUsingMockApi) return mockFn();
+  try {
+    return await apiClient({ method, url, data }).then(r => r.data);
+  } catch (err) {
+    console.warn(`Backend error on ${method} ${url}, falling back to mock:`, err.message);
+    return mockFn();
+  }
 }
 
 const api = {
   // ── Campaigns ──
   getCampaigns: () =>
-    isUsingMockApi ? mockApi.getCampaigns() : realApi('get', '/campaigns'),
+    withFallback('get', '/campaigns', null, () => mockApi.getCampaigns()),
 
   createCampaign: (data) =>
-    isUsingMockApi ? mockApi.createCampaign(data) : realApi('post', '/campaigns', data),
+    withFallback('post', '/campaigns', data, () => mockApi.createCampaign(data)),
 
   getCampaign: (id) =>
-    isUsingMockApi ? mockApi.getCampaign(id) : realApi('get', `/campaigns/${id}`),
+    withFallback('get', `/campaigns/${id}`, null, () => mockApi.getCampaign(id)),
 
   updateCampaign: (id, data) =>
-    isUsingMockApi ? mockApi.updateCampaign(id, data) : realApi('patch', `/campaigns/${id}`, data),
+    withFallback('patch', `/campaigns/${id}`, data, () => mockApi.updateCampaign(id, data)),
 
   setCampaignStatus: (id, status) =>
-    isUsingMockApi ? mockApi.setCampaignStatus(id, status) : realApi('post', `/campaigns/${id}/status`, { status }),
+    withFallback('post', `/campaigns/${id}/status`, { status }, () => mockApi.setCampaignStatus(id, status)),
 
   duplicateCampaign: (id) =>
-    isUsingMockApi ? mockApi.duplicateCampaign(id) : realApi('post', `/campaigns/${id}/duplicate`),
+    withFallback('post', `/campaigns/${id}/duplicate`, null, () => mockApi.duplicateCampaign(id)),
 
   getCampaignMetrics: (id) =>
-    isUsingMockApi ? mockApi.getCampaignMetrics(id) : realApi('get', `/campaigns/${id}/metrics`),
+    withFallback('get', `/campaigns/${id}/metrics`, null, () => mockApi.getCampaignMetrics(id)),
 
   getCampaignActivity: (id) =>
-    isUsingMockApi ? mockApi.getCampaignActivity(id) : realApi('get', `/campaigns/${id}/activity`),
+    withFallback('get', `/campaigns/${id}/activity`, null, () => mockApi.getCampaignActivity(id)),
 
   getCampaignProspects: (id) =>
-    isUsingMockApi ? mockApi.getCampaignProspects(id) : realApi('get', `/campaigns/${id}/prospects`),
+    withFallback('get', `/campaigns/${id}/prospects`, null, () => mockApi.getCampaignProspects(id)),
 
   // ── Prospects ──
   getProspect: (id) =>
-    isUsingMockApi ? mockApi.getProspect(id) : realApi('get', `/prospects/${id}`),
+    withFallback('get', `/prospects/${id}`, null, () => mockApi.getProspect(id)),
 
   getAllProspects: () =>
-    isUsingMockApi ? mockApi.getAllProspects() : realApi('get', '/prospects'),
+    withFallback('get', '/prospects', null, () => mockApi.getAllProspects()),
 
   // ── Prompts ──
   getCampaignPrompts: (campaignId) =>
-    isUsingMockApi ? mockApi.getCampaignPrompts(campaignId) : realApi('get', `/campaigns/${campaignId}/prompts`),
+    withFallback('get', `/campaigns/${campaignId}/prompts`, null, () => mockApi.getCampaignPrompts(campaignId)),
 
   createPromptVersion: (campaignId, data) =>
-    isUsingMockApi ? mockApi.createPromptVersion(campaignId, data) : realApi('post', `/campaigns/${campaignId}/prompts`, data),
+    withFallback('post', `/campaigns/${campaignId}/prompts`, data, () => mockApi.createPromptVersion(campaignId, data)),
 
   activatePrompt: (promptId) =>
-    isUsingMockApi ? mockApi.activatePrompt(promptId) : realApi('post', `/prompts/${promptId}/activate`),
+    withFallback('post', `/prompts/${promptId}/activate`, null, () => mockApi.activatePrompt(promptId)),
 
   // ── Escalations ──
   getEscalations: () =>
-    isUsingMockApi ? mockApi.getEscalations() : realApi('get', '/escalations'),
+    withFallback('get', '/escalations', null, () => mockApi.getEscalations()),
 
   resolveEscalation: (id, action) =>
-    isUsingMockApi ? mockApi.resolveEscalation(id, action) : realApi('post', `/escalations/${id}/resolve`, { action }),
+    withFallback('post', `/escalations/${id}/resolve`, { action }, () => mockApi.resolveEscalation(id, action)),
 
   // ── Conflicts ──
   getConflicts: () =>
-    isUsingMockApi ? mockApi.getConflicts() : realApi('get', '/conflicts'),
+    withFallback('get', '/conflicts', null, () => mockApi.getConflicts()),
 
   resolveConflict: (id, campaignId) =>
-    isUsingMockApi ? mockApi.resolveConflict(id, campaignId) : realApi('post', `/conflicts/${id}/resolve`, { campaign_id: campaignId }),
+    withFallback('post', `/conflicts/${id}/resolve`, { campaign_id: campaignId }, () => mockApi.resolveConflict(id, campaignId)),
 
   // ── System Control ──
   getSystemControl: () =>
-    isUsingMockApi ? mockApi.getSystemControl() : realApi('get', '/control'),
+    withFallback('get', '/control', null, () => mockApi.getSystemControl()),
 
   toggleKillSwitch: (engaged) =>
-    isUsingMockApi ? mockApi.toggleKillSwitch(engaged) : realApi('post', '/control/kill', { engaged }),
+    withFallback('post', '/control/kill', { enabled: engaged }, () => mockApi.toggleKillSwitch(engaged)),
 
   setChannelPause: (channel, paused) =>
-    isUsingMockApi ? mockApi.setChannelPause(channel, paused) : realApi('post', '/control/channel', { channel, paused }),
+    withFallback('post', '/control/channel', { channel, paused }, () => mockApi.setChannelPause(channel, paused)),
 
   // ── Costs ──
   getCosts: () =>
-    isUsingMockApi ? mockApi.getCosts() : realApi('get', '/costs'),
+    withFallback('get', '/costs', null, () => mockApi.getCosts()),
 
   // ── Agent Runs ──
   getAgentRuns: (campaignId) =>
-    isUsingMockApi ? mockApi.getAgentRuns(campaignId) : realApi('get', `/campaigns/${campaignId}/agents`),
+    withFallback('get', `/campaigns/${campaignId}/agents`, null, () => mockApi.getAgentRuns(campaignId)),
 
   // ── Reps ──
   getReps: () =>
-    isUsingMockApi ? mockApi.getReps() : realApi('get', '/reps'),
+    withFallback('get', '/reps', null, () => mockApi.getReps()),
 
   getSuppression: () =>
-    isUsingMockApi ? mockApi.getSuppression() : realApi('get', '/suppression'),
+    withFallback('get', '/suppression', null, () => mockApi.getSuppression()),
 };
 
 export default api;
