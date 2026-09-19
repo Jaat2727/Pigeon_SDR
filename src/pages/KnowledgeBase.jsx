@@ -252,6 +252,20 @@ export default function KnowledgeBase() {
           </div>
         </div>
       )}
+
+      {/* DronaHQ Footer */}
+      <div style={{
+        marginTop: 'var(--sp-5)', padding: '12px 16px',
+        background: 'var(--surface-card)', borderRadius: 'var(--radius-card)',
+        border: '1px solid var(--border-subtle)',
+        display: 'flex', alignItems: 'center', gap: '8px',
+        fontSize: '12px', color: 'var(--text-muted)',
+      }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--accent)' }}>
+          ⚡
+        </span>
+        Files are stored and vectorised in DronaHQ. Chunks are automatically embedded and available to all agents via RAG retrieval.
+      </div>
     </div>
   );
 }

@@ -13,6 +13,8 @@ import costsRoutes from './routes/costs.js';
 import metricsRoutes from './routes/metrics.js';
 import activityRoutes from './routes/activity.js';
 import agentsRoutes from './routes/agents.js';
+import repsRoutes from './routes/reps.js';
+import suppressionRoutes from './routes/suppression.js';
 
 const app = express();
 
@@ -35,6 +37,8 @@ app.use('/prompts', promptsRoutes);
 app.use('/escalations', escalationsRoutes);
 app.use('/conflicts', conflictsRoutes);
 app.use('/costs', costsRoutes);
+app.use('/reps', repsRoutes);
+app.use('/suppression', suppressionRoutes);
 
 // New global routes (added for v2 redesign)
 app.use('/metrics', metricsRoutes);
