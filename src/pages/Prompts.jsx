@@ -58,7 +58,7 @@ export default function Prompts() {
       
       if (enriched.length > 0) {
         const active = enriched.find(v => v.status === 'active') || enriched[0];
-        const prev = enriched.find(v => v.status === 'archived') || enriched[enriched.length - 1];
+        const prev = enriched.find(v => v.id !== active.id) || active;
         
         if (!selectedVersion) setSelectedVersion(active.id);
         if (!compareSource) setCompareSource(prev.id);

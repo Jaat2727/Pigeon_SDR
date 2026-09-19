@@ -198,11 +198,28 @@ let _conflicts = [
 
 let _promptVersions = {
   'camp_1': [
-    { id: 'pv_1', version: 2, is_active: true, content: 'Role: You are an SDR targeting Enterprise HR.\nVariables: {{first_name}}, {{company}}\nRules: Be concise. No buzzwords.\nOutput Schema: { "subject": "string", "body": "string" }\nEscalation: needs_human if company size is missing.' },
-    { id: 'pv_2', version: 1, is_active: false, content: 'Role: You are an SDR.\nVariables: {{first_name}}\nRules: Be friendly.\nOutput Schema: { "body": "string" }\nEscalation: none.' }
+    { 
+      id: 'pv_4', version: 4, is_active: true, created_at: new Date(now.getTime() - 2*86400000).toISOString(), author: 'Nishu',
+      content: 'Role: You are an SDR targeting Enterprise HR at Fortune 500s.\n\nVariables:\n- {{first_name}}: Prospect first name\n- {{company}}: Prospect company\n- {{recent_news}}: Recent company news/funding\n\nRules:\n1. Be concise, under 75 words.\n2. Do NOT use buzzwords like "synergy" or "alignment".\n3. Start with the recent news to show we did our research.\n\nOutput Schema:\n{\n  "subject": "string",\n  "body": "string",\n  "escalate": "boolean"\n}\n\nEscalation:\n- Return "needs_human" if company size is missing from context.'
+    },
+    { 
+      id: 'pv_3', version: 3, is_active: false, created_at: new Date(now.getTime() - 10*86400000).toISOString(), author: 'Nishu',
+      content: 'Role: You are an SDR targeting Enterprise HR.\n\nVariables:\n- {{first_name}}: Prospect first name\n- {{company}}: Prospect company\n- {{recent_news}}: Recent company news\n\nRules:\n1. Keep it under 100 words.\n2. Start with the recent news to show we did our research.\n\nOutput Schema:\n{\n  "subject": "string",\n  "body": "string"\n}\n\nEscalation:\n- Return "needs_human" if company size is missing.'
+    },
+    { 
+      id: 'pv_2', version: 2, is_active: false, created_at: new Date(now.getTime() - 20*86400000).toISOString(), author: 'Admin SDR',
+      content: 'Role: You are an SDR targeting Enterprise HR.\n\nVariables:\n- {{first_name}}\n- {{company}}\n\nRules:\n1. Keep it under 100 words.\n2. Be friendly and polite.\n\nOutput Schema:\n{\n  "subject": "string",\n  "body": "string"\n}\n\nEscalation: none.'
+    },
+    { 
+      id: 'pv_1', version: 1, is_active: false, created_at: new Date(now.getTime() - 30*86400000).toISOString(), author: 'Admin SDR',
+      content: 'Role: You are an SDR.\n\nVariables:\n- {{first_name}}\n\nRules:\nBe friendly.\n\nOutput Schema:\n{ "body": "string" }\n\nEscalation: none.'
+    }
   ],
   'camp_2': [
-    { id: 'pv_3', version: 1, is_active: true, content: 'Role: Finance SDR.\nVariables: {{first_name}}, {{revenue}}\nRules: Focus on ROI.\nOutput Schema: { "subject": "string", "body": "string" }\nEscalation: needs_human if revenue under 1M.' }
+    { 
+      id: 'pv_3', version: 1, is_active: true, created_at: new Date(now.getTime() - 5*86400000).toISOString(), author: 'Nishu',
+      content: 'Role: Finance SDR.\nVariables: {{first_name}}, {{revenue}}\nRules: Focus on ROI.\nOutput Schema: { "subject": "string", "body": "string" }\nEscalation: needs_human if revenue under 1M.'
+    }
   ]
 };
 
@@ -238,6 +255,21 @@ export const mockApi = {
   async setChannelPause(channel, paused) { await delay(); _systemControl.channel_pauses[channel] = paused; return _systemControl; },
 
   async getCampaignPrompts(id) { await delay(); return _promptVersions[id] || []; },
+  async activatePrompt(id) {
+    await delay();
+    let found = false;
+    for (const pvList of Object.values(_promptVersions)) {
+      const target = pvList.find(p => p.id === id);
+      if (target) {
+        // Deactivate others in same campaign
+        pvList.forEach(p => p.is_active = false);
+        target.is_active = true;
+        found = true;
+        break;
+      }
+    }
+    if (!found) throw new Error('Prompt version not found');
+  },
   async getConflicts() { await delay(); return _conflicts; },
   async getCosts() { await delay(); return { total_spend: 120.50, by_campaign: [] }; },
   
