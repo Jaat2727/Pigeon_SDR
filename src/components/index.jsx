@@ -29,6 +29,16 @@ export function EngineBadge({ engine }) {
   return <span className={`engine-badge engine-badge--${engine}`}>{label}</span>;
 }
 
+// ── Provenance Tag ──
+export function ProvenanceTag({ source }) {
+  const labels = { manual: 'Manual', crm: 'CRM', ai_enriched: 'AI Enriched' };
+  return (
+    <span className={`provenance-tag provenance-tag--${source}`}>
+      {labels[source] || source}
+    </span>
+  );
+}
+
 // ── Toggle ──
 export function Toggle({ on, onChange, disabled = false, ariaLabel }) {
   return (
@@ -183,7 +193,7 @@ export function ActivityLine({ activity }) {
 // ── Agent Row (for dashboard agents panel) ──
 export function AgentRow({ agent, onToggle, disabled = false }) {
   return (
-    <div className="agent-row">
+    <div className={`agent-row ${disabled ? 'agent-row--disabled' : ''}`}>
       <div className="agent-row__info">
         <div className="agent-row__name">
           {agent.name}
@@ -197,6 +207,19 @@ export function AgentRow({ agent, onToggle, disabled = false }) {
         )}
       </div>
       <Toggle on={agent.enabled} onChange={(val) => onToggle?.(agent.name, val)} disabled={disabled} ariaLabel={`Toggle ${agent.name}`} />
+    </div>
+  );
+}
+
+// ── Channel Row (for settings) ──
+export function ChannelRow({ channel, onToggle, disabled = false }) {
+  const channelNames = { email: 'Email', linkedin: 'LinkedIn', sms: 'SMS', voice: 'Voice' };
+  return (
+    <div className={`channel-row ${disabled ? 'channel-row--disabled' : ''}`}>
+      <div className="channel-row__info">
+        <span className="channel-row__name">{channelNames[channel] || channel}</span>
+      </div>
+      <Toggle on={!disabled} onChange={(val) => onToggle?.(channel, !val)} ariaLabel={`Pause ${channel} channel`} />
     </div>
   );
 }

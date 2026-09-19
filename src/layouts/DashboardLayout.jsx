@@ -24,6 +24,7 @@ const NAV_ITEMS = [
     { name: 'Prompts',        path: '/prompts',     icon: MessageSquareText, badgeKey: null },
   ]},
   { section: 'SYSTEM', items: [
+    { name: 'Review Queue',   path: '/review-queue', icon: AlertTriangle,    badgeKey: 'review' },
     { name: 'Conflicts',      path: '/conflicts',   icon: AlertTriangle,    badgeKey: 'conflicts' },
     { name: 'Knowledge',      path: '/knowledge',   icon: BookOpen,         badgeKey: null },
   ]},
@@ -54,6 +55,7 @@ export default function DashboardLayout({ children, user }) {
     switch (key) {
       case 'campaigns': return campaigns.length || null;
       case 'conflicts': return conflictsCount || null;
+      case 'review': return 2; /* Mocked count for now */
       default: return null;
     }
   };
@@ -97,12 +99,8 @@ export default function DashboardLayout({ children, user }) {
           ))}
         </nav>
 
-        <div className="sidebar-upgrade">
-          <h4>Agent Pro</h4>
-          <p>Unlock voice SDRs and advanced custom reasoning engines.</p>
-          <button className="upgrade-btn">Upgrade to Pro</button>
-        </div>
       </aside>
+
 
       {/* ── Main Area (includes Topbar) ── */}
       <div className="sdr-main-wrapper">
@@ -122,9 +120,9 @@ export default function DashboardLayout({ children, user }) {
               style={{ borderRadius: '999px', padding: '8px 16px', marginLeft: '8px' }}
             >
               {isKilled ? (
-                <><Play size={14} /> Resume</>
+                <><Play size={14} /> Activity stopped, resume</>
               ) : (
-                <><OctagonX size={14} /> Stop Activity</>
+                <><OctagonX size={14} /> Stop all activity</>
               )}
             </button>
 

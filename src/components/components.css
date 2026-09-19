@@ -99,6 +99,23 @@
   color: var(--accent);
 }
 
+/* ── Provenance Tag ── */
+.provenance-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid var(--border);
+}
+.provenance-tag--manual { background: var(--canvas); color: var(--text-secondary); }
+.provenance-tag--crm { background: var(--brand-purple); color: #fff; border-color: var(--brand-purple); }
+.provenance-tag--ai_enriched { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+
 /* ── Toggle ── */
 .toggle {
   position: relative;
@@ -358,21 +375,25 @@
 }
 
 /* ── Agent Row ── */
-.agent-row {
+.agent-row, .channel-row {
   display: flex;
   align-items: center;
   gap: var(--sp-3);
   padding: var(--sp-3) var(--sp-5);
   border-bottom: 1px solid var(--border-subtle);
+  transition: opacity var(--duration-fast);
 }
-.agent-row:last-child {
+.agent-row:last-child, .channel-row:last-child {
   border-bottom: none;
 }
-.agent-row__info {
+.agent-row--disabled, .channel-row--disabled {
+  opacity: 0.5;
+}
+.agent-row__info, .channel-row__info {
   flex: 1;
   min-width: 0;
 }
-.agent-row__name {
+.agent-row__name, .channel-row__name {
   font-size: var(--text-md);
   font-weight: 700;
   color: var(--text-primary);
@@ -563,8 +584,8 @@
 .form-input, .form-textarea {
   width: 100%;
   padding: 12px 16px;
-  background: #F8FAFC;
-  border: 1.5px solid transparent;
+  background: var(--canvas);
+  border: 1px solid var(--border);
   border-radius: var(--radius-input);
   color: var(--text-primary);
   font-family: var(--font-ui);
@@ -573,9 +594,9 @@
   transition: all var(--duration-fast) var(--ease-default);
 }
 .form-input:focus, .form-textarea:focus {
-  background: #fff;
+  background: var(--surface-card);
   border-color: var(--accent);
-  box-shadow: 0 4px 12px rgba(0, 122, 90, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   outline: none;
 }
 .form-input::placeholder, .form-textarea::placeholder {

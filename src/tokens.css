@@ -1,78 +1,94 @@
 /* ═══════════════════════════════════════════════
-   PIGEON SDR — Design Tokens (Light Theme "PinenMFB" Style)
+   PIGEON SDR — Design Tokens (Strict Dark Theme)
    ═══════════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@600&family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
 
 :root {
   /* ── Surfaces ── */
-  --canvas:       #F4F7FE; /* Soft light blue/grey background */
-  --surface-bar:  #FFFFFF; /* White sidebar/topbar */
-  --surface-card: #FFFFFF; /* White cards */
-  --surface-raised: #FFFFFF;
+  --canvas:       #0B121A;
+  --surface-bar:  #101A25; /* bars/sidebar */
+  --surface-card: #151F2B;
+  --surface-raised: #1B2734;
+
+  /* ── Sidebar ── */
+  --sidebar-bg:        #101A25;
+  --sidebar-surface:   #151F2B;
+  --sidebar-hover:     #1B2734;
+  --sidebar-active:    #1B2734;
+  --sidebar-active-text: #E7EEF5;
+  --sidebar-text:      #8FA2B2;
+  --sidebar-text-hover:#E7EEF5;
+  --sidebar-icon:      #647787;
+  --sidebar-section:   #647787;
+  --sidebar-border:    #1F2C39;
+  --sidebar-brand:     #E7EEF5;
 
   /* ── Borders ── */
-  --border:        #E9EDF7;
-  --border-subtle: #F0F3F9;
+  --border:        #263443;
+  --border-subtle: #1F2C39;
 
   /* ── Text ── */
-  --text-primary:   #1B254B; /* Dark navy for headings */
-  --text-secondary: #707EAE; /* Cool grey for subtitles */
-  --text-muted:     #A3AED0; /* Light grey for tertiary */
+  --text-primary:   #E7EEF5;
+  --text-secondary: #8FA2B2;
+  --text-muted:     #647787;
 
-  /* ── Accents & Status (matching inspiration) ── */
-  --accent:  #007A5A; /* Vibrant Teal/Green */
-  --accent-hover: #04654B;
-  --accent-soft: #E5F6F2;
-  --success: #05CD99;
-  --success-soft: #E5FAFA;
-  --warning: #FFCE20;
-  --warning-soft: #FFF8DF;
-  --danger:  #EE5D50;
-  --danger-soft: #FDECEB;
+  /* ── Accents & Status ── */
+  --accent:  #3B9AE1;
+  --accent-hover: #2982C4;
+  --accent-soft: rgba(59, 154, 225, 0.15);
+  
+  --success: #4FBF92;
+  --success-soft: rgba(79, 191, 146, 0.15);
+  
+  --warning: #D9A441;
+  --warning-soft: rgba(217, 164, 65, 0.15);
+  
+  --danger:  #E05C5C;
+  --danger-soft: rgba(224, 92, 92, 0.15);
 
   /* Additional chart/icon colors */
-  --brand-purple: #4318FF;
-  --brand-blue: #39B8FF;
-  --brand-orange: #FFB547;
-  --brand-green: #05CD99;
+  --brand-purple: #A78BFA;
+  --brand-blue: #3B9AE1;
+  --brand-orange: #FB923C;
+  --brand-green: #4FBF92;
 
   /* ── Typography ── */
-  --font-ui:    'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-ui:    'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono:  'IBM Plex Mono', 'Fira Code', monospace;
-  --font-title: 'Plus Jakarta Sans', sans-serif;
+  --font-title: 'Archivo', sans-serif;
 
   --text-xs:  12px;
   --text-sm:  13px;
-  --text-md:  14px;
+  --text-md:  14px; /* Body 14px */
   --text-lg:  16px;
   --text-xl:  20px;
   --text-2xl: 24px;
   --text-3xl: 34px;
 
-  --leading-normal: 1.6;
+  --leading-normal: 1.5; /* Body 1.5 */
   --leading-tight: 1.3;
 
   /* ── Spacing scale ── */
   --sp-1: 4px;
-  --sp-2: 8px;
-  --sp-3: 12px;
-  --sp-4: 16px;
-  --sp-5: 24px;
-  --sp-6: 32px;
-  --sp-8: 48px;
-  --sp-10: 64px;
+  --sp-2: 6px;
+  --sp-3: 10px;
+  --sp-4: 14px;
+  --sp-5: 18px;
+  --sp-6: 22px;
+  --sp-8: 32px;
+  --sp-10: 48px;
 
-  /* ── Radii (much rounder) ── */
-  --radius-card:  20px;
-  --radius-input: 12px;
-  --radius-btn:   12px;
+  /* ── Radii ── */
+  --radius-card:  10px;
+  --radius-input: 7px;
+  --radius-btn:   7px;
   --radius-pill:  999px;
 
   /* ── Shadows (soft and diffused) ── */
-  --shadow-card: 0px 18px 40px rgba(112, 144, 176, 0.12);
-  --shadow-raised: 0px 20px 40px rgba(0, 0, 0, 0.08);
-  --shadow-dropdown: 0px 20px 40px rgba(0, 0, 0, 0.1);
+  --shadow-card: 0px 4px 12px rgba(0, 0, 0, 0.2);
+  --shadow-raised: 0px 8px 24px rgba(0, 0, 0, 0.4);
+  --shadow-dropdown: 0px 12px 32px rgba(0, 0, 0, 0.5);
 
   /* ── Transitions ── */
   --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
@@ -81,18 +97,18 @@
   --duration-slow: 350ms;
 
   /* ── Layout ── */
-  --topbar-h: 70px;
-  --sidebar-w: 260px;
+  --topbar-h: 52px;
+  --sidebar-w: 216px;
 
-  /* ── Campaign colours (adjusted for light theme) ── */
-  --campaign-1: #4318FF;
-  --campaign-2: #05CD99;
-  --campaign-3: #FFCE20;
-  --campaign-4: #EE5D50;
-  --campaign-5: #39B8FF;
+  /* ── Campaign colours (adjusted for dark theme) ── */
+  --campaign-1: #3B9AE1;
+  --campaign-2: #4FBF92;
+  --campaign-3: #D9A441;
+  --campaign-4: #E05C5C;
+  --campaign-5: #A78BFA;
   --campaign-6: #F472B6;
-  --campaign-7: #007A5A;
-  --campaign-8: #FFB547;
+  --campaign-7: #38BDF8;
+  --campaign-8: #FB923C;
 }
 
 /* ── Base reset ── */
@@ -128,10 +144,9 @@ td, th,
 /* ── Headings ── */
 h1, h2, h3, h4 {
   font-family: var(--font-title);
-  font-weight: 700;
+  font-weight: 600; /* Archivo Semibold */
   line-height: var(--leading-tight);
   color: var(--text-primary);
-  letter-spacing: -0.02em;
 }
 
 /* ── Focus visibility ── */
@@ -157,16 +172,16 @@ h1, h2, h3, h4 {
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--sidebar-border);
   border-radius: var(--radius-pill);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: var(--text-muted);
 }
 
 ::selection {
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--text-primary);
 }
 
 a {
@@ -186,4 +201,4 @@ a:hover {
 .text-warning { color: var(--warning); }
 .text-danger { color: var(--danger); }
 .font-mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
-.font-title { font-family: var(--font-title); }
+.font-title { font-family: var(--font-title); font-weight: 600; }

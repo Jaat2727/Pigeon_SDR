@@ -11,6 +11,10 @@ import Login from './pages/Login';
 import CampaignsList from './pages/CampaignsList';
 import CampaignDashboard from './pages/CampaignDashboard';
 import CreateCampaign from './pages/CreateCampaign';
+import KnowledgeBase from './pages/KnowledgeBase';
+import Prompts from './pages/Prompts';
+import ProspectDetail from './pages/ProspectDetail';
+import ReviewQueue from './pages/ReviewQueue';
 
 import './App.css';
 
@@ -46,12 +50,13 @@ function AuthenticatedApp({ user, onSignOut }) {
           
           {/* Prospects */}
           <Route path="/prospects" element={<PlaceholderPage title="Prospects" description="Browse, filter and manage your outreach prospect lists." />} />
-          <Route path="/prospects/:id" element={<PlaceholderPage title="Prospect Detail" description="Timeline and knowledge used for this prospect." />} />
+          <Route path="/prospects/:id" element={<ProspectDetail />} />
           
           {/* Other Modules */}
-          <Route path="/prompts" element={<PlaceholderPage title="Prompt Versions" description="Configure reasoning prompts, personalization templates, and reply logic." />} />
+          <Route path="/prompts" element={<Prompts />} />
+          <Route path="/review-queue" element={<ReviewQueue />} />
           <Route path="/conflicts" element={<PlaceholderPage title="Conflicts" description="Review domain warmup issues, DMARC warnings, and sending conflicts." />} />
-          <Route path="/knowledge" element={<PlaceholderPage title="Knowledge Base" description="Manage product docs, case studies, and context fed to AI agents." />} />
+          <Route path="/knowledge" element={<KnowledgeBase />} />
           <Route path="/settings" element={<PlaceholderPage title="Settings" description="Manage reps, channels, guardrails, and platform costs." />} />
           
           {/* Fallback */}
