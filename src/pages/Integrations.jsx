@@ -10,43 +10,37 @@ const INTEGRATIONS = [
   {
     id: 'dronahq', name: 'DronaHQ', type: 'Agent Engine',
     status: 'connected', logo: '⚡',
-    description: 'Autonomous agent orchestration — powering all 7 SDR agents.',
-    stat: '2,615 runs today',
+    description: 'Autonomous agent orchestration — powering all SDR agents.',
     color: '#4F46E5',
   },
   {
     id: 'apollo', name: 'Apollo.io', type: 'Prospect Data',
-    status: 'connected', logo: '🔭',
+    status: 'disconnected', logo: '🔭',
     description: 'Prospect enrichment, email finding, and company data.',
-    stat: '1,750 API calls today',
     color: '#8B5CF6',
   },
   {
     id: 'linkedin', name: 'LinkedIn', type: 'Outreach',
-    status: 'connected', logo: '💼',
+    status: 'disconnected', logo: '💼',
     description: 'LinkedIn message delivery and profile enrichment.',
-    stat: '205 messages sent',
     color: '#0077B5',
   },
   {
     id: 'sendgrid', name: 'SendGrid', type: 'Email',
-    status: 'connected', logo: '✉️',
+    status: 'disconnected', logo: '✉️',
     description: 'Transactional email delivery with open and click tracking.',
-    stat: '540 emails sent',
     color: '#059669',
   },
   {
     id: 'twilio', name: 'Twilio', type: 'SMS & Voice',
-    status: 'connected', logo: '📞',
+    status: 'disconnected', logo: '📞',
     description: 'SMS and Voice call delivery for multi-channel outreach.',
-    stat: '14 calls · 110 SMS',
     color: '#F59E0B',
   },
   {
     id: 'salesforce', name: 'Salesforce', type: 'CRM',
-    status: 'connected', logo: '☁️',
+    status: 'disconnected', logo: '☁️',
     description: 'CRM sync for opportunities, accounts, and contacts.',
-    stat: 'Last sync: 2 min ago',
     color: '#00A1E0',
   },
 ];
@@ -61,15 +55,7 @@ const AGENT_WORKFLOW = [
   { step: 7, agent: 'Voice SDR Agent', tool: 'Twilio + TTS + LLM', output: 'Live voice conversation', color: '#F59E0B' },
 ];
 
-const TOOL_CALLS = [
-  { id: 'tc1', tool: 'Apollo: Search Contacts', agent: 'Lead Research Agent', result: 'Found 12 contacts', time: '0:23 ago', status: 'success' },
-  { id: 'tc2', tool: 'LinkedIn: Send Message', agent: 'Personalisation Agent', result: 'Delivered to Rahul Patel', time: '1:04 ago', status: 'success' },
-  { id: 'tc3', tool: 'RAG: Query Knowledge Base', agent: 'ICP Fitment Agent', result: 'ICP Definition v3 retrieved', time: '1:31 ago', status: 'success' },
-  { id: 'tc4', tool: 'SendGrid: Send Email', agent: 'Personalisation Agent', result: 'Delivered to sarah.chen@linear.app', time: '2:12 ago', status: 'success' },
-  { id: 'tc5', tool: 'Apollo: Enrich Company', agent: 'Lead Research Agent', result: 'enrichment_incomplete', time: '3:08 ago', status: 'error' },
-  { id: 'tc6', tool: 'Twilio: Outbound Call', agent: 'Voice SDR Agent', result: 'Connected — 4m 32s', time: '8:20 ago', status: 'success' },
-  { id: 'tc7', tool: 'Salesforce: Sync Opportunity', agent: 'Follow-up Agent', result: 'Opportunity $28K created', time: '12:44 ago', status: 'success' },
-];
+const TOOL_CALLS = [];
 
 const RAG_SOURCES = [
   { name: 'ICP Definition v3', queries: 423, last_used: '2 min ago' },
@@ -81,7 +67,10 @@ const RAG_SOURCES = [
   { name: 'Competitor Comparison Grid', queries: 22, last_used: '2h ago' },
 ];
 
+import { useApp } from '../context/AppContext';
+
 export default function Integrations() {
+  const { dailyCosts, globalMetrics } = useApp();
   const [selectedWorkflow, setSelectedWorkflow] = useState(null);
 
   return (
@@ -117,15 +106,15 @@ export default function Integrations() {
             <span className="integrations-dronahq-stat__key">Active Agents</span>
           </div>
           <div className="integrations-dronahq-stat">
-            <span className="integrations-dronahq-stat__val">2,615</span>
+            <span className="integrations-dronahq-stat__val">{dailyCosts?.total_runs?.toLocaleString() || 0}</span>
             <span className="integrations-dronahq-stat__key">Runs Today</span>
           </div>
           <div className="integrations-dronahq-stat">
-            <span className="integrations-dronahq-stat__val">94%</span>
+            <span className="integrations-dronahq-stat__val">{globalMetrics?.agent_success_rate || 0}%</span>
             <span className="integrations-dronahq-stat__key">Success Rate</span>
           </div>
           <div className="integrations-dronahq-stat">
-            <span className="integrations-dronahq-stat__val">1.4s</span>
+            <span className="integrations-dronahq-stat__val">{dailyCosts?.avg_latency_ms ? (dailyCosts.avg_latency_ms / 1000).toFixed(1) : '0'}s</span>
             <span className="integrations-dronahq-stat__key">Avg Latency</span>
           </div>
         </div>
@@ -178,7 +167,7 @@ export default function Integrations() {
               </div>
             </div>
             <div>
-              {TOOL_CALLS.map(tc => (
+              {TOOL_CALLS.length > 0 ? TOOL_CALLS.map(tc => (
                 <div key={tc.id} className="tool-call-row">
                   <div
                     className="tool-call-row__status"
@@ -194,7 +183,11 @@ export default function Integrations() {
                   </div>
                   <div className="tool-call-row__time">{tc.time}</div>
                 </div>
-              ))}
+              )) : (
+                <div style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
+                  No active tool calls.
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -214,11 +207,17 @@ export default function Integrations() {
                   <div className="integration-card__type">{int.type}</div>
                 </div>
                 <div className="integration-card__right">
-                  <div className="integration-card__stat">{int.stat}</div>
-                  <div className="integration-card__status">
-                    <CheckCircle size={12} style={{ color: 'var(--success)' }} />
-                    <span>Connected</span>
-                  </div>
+                  {int.status === 'connected' ? (
+                    <div className="integration-card__status">
+                      <CheckCircle size={12} style={{ color: 'var(--success)' }} />
+                      <span>Connected</span>
+                    </div>
+                  ) : (
+                    <div className="integration-card__status" style={{ color: 'var(--text-muted)' }}>
+                      <AlertCircle size={12} style={{ color: 'var(--text-muted)' }} />
+                      <span>Not Connected</span>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

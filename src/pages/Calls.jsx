@@ -91,8 +91,8 @@ export default function Calls() {
     <div className="page animate-in">
       <div className="page-header">
         <div>
-          <h1 className="page-title">Live Call Center</h1>
-          <p className="page-subtitle">Voice SDR Agent active calls and call history.</p>
+          <h1 className="page-title">Live Call Center <span style={{fontSize: 12, padding: '2px 8px', background: 'var(--warning-soft)', color: 'var(--warning)', borderRadius: 'var(--radius-pill)', marginLeft: 8, fontWeight: 600, verticalAlign: 'middle'}}>SIMULATED DATA</span></h1>
+          <p className="page-subtitle">Voice SDR Agent active calls and call history. Displaying simulated mock data.</p>
         </div>
       </div>
 

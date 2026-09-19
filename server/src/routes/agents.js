@@ -67,3 +67,101 @@ router.get('/', async (req, res) => {
 });
 
 export default router;
+
+import { processAgentCallback } from '../agents/client.js';
+import { advance } from '../orchestrator/index.js';
+
+/**
+ * POST /agents/callback
+ * DronaHQ agent webhook callback endpoint.
+ * Requires Authorization: Bearer <AGENT_CALLBACK_SECRET>
+ */
+router.post('/callback', async (req, res) => {
+  const auth = req.headers.authorization;
+  if (!auth || auth !== `Bearer ${process.env.AGENT_CALLBACK_SECRET}`) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  const { run_id, thread_id, agent_name, payload } = req.body;
+  if (!agent_name || !payload || (!run_id && !thread_id)) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  try {
+    // 1. Find the pending campaign_prospect
+    let query = supabase.from('campaign_prospects')
+      .select('*, prospects(*), campaigns(*)')
+      .eq('pending_agent_call', agent_name)
+      .not('agent_fired_at', 'is', null);
+      
+    if (run_id) {
+      query = query.eq('pending_run_id', run_id);
+    } else {
+      query = query.eq('pending_thread_id', thread_id);
+    }
+
+    const { data: prospects, error } = await query;
+    
+    if (error) throw error;
+    if (!prospects || prospects.length === 0) {
+      return res.status(404).json({ error: 'No matching pending prospect found' });
+    }
+    
+    const cp = prospects[0];
+
+    // Meta object needed by processAgentCallback for logging to agent_runs
+    const meta = {
+      campaign_id: cp.campaign_id,
+      prospect_id: cp.prospect_id,
+      prompt_version_id: cp.campaigns?.active_prompt_version_id || null,
+      payload: cp.pending_payload || {}, // Should we store the payload? We didn't add it to DB yet!
+      is_retry: false 
+    };
+
+    const latencyMs = Date.now() - new Date(cp.agent_fired_at).getTime();
+
+    // 2. Process the callback (validates, retries once async if needed, writes to agent_runs)
+    const result = await processAgentCallback(agent_name, payload, meta, req.body.tokens || 200, req.body.cost || 0.002, latencyMs);
+
+    if (result.is_retry_fired) {
+      // Validation failed, and processAgentCallback fired a new run asynchronously.
+      // We must update the pending flags to the new thread_id/run_id
+      const { error: updErr } = await supabase.from('campaign_prospects')
+        .update({
+          pending_run_id: result.pending.run_id,
+          pending_thread_id: result.pending.thread_id,
+          agent_fired_at: new Date().toISOString()
+        })
+        .eq('campaign_id', cp.campaign_id)
+        .eq('prospect_id', cp.prospect_id);
+      
+      if (updErr) console.error('Failed to update retry pending info:', updErr);
+      return res.json({ message: 'Retry fired', new_pending: result.pending });
+    }
+
+    // 3. Clear pending state
+    const { error: clearErr } = await supabase.from('campaign_prospects')
+      .update({
+        pending_agent_call: null,
+        pending_run_id: null,
+        pending_thread_id: null,
+        agent_fired_at: null
+      })
+      .eq('campaign_id', cp.campaign_id)
+      .eq('prospect_id', cp.prospect_id);
+
+    if (clearErr) throw clearErr;
+
+    // 4. Trigger the orchestrator to advance this prospect
+    // advance() runs asynchronously and does not block the callback response
+    advance(cp.campaign_id, cp.prospect_id, result.parsedOutput).catch(err => {
+      console.error(`Error advancing prospect ${cp.prospect_id}:`, err);
+    });
+
+    res.json({ success: true, message: 'Callback processed and pipeline advanced' });
+
+  } catch (err) {
+    console.error('Callback processing error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});

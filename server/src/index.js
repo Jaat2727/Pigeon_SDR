@@ -47,7 +47,13 @@ app.use('/agents', agentsRoutes);
 // /attention alias reads from the same escalations table
 app.use('/attention', escalationsRoutes);
 
+import debugRoutes from './routes/debug.js';
+app.use('/debug', debugRoutes);
+
+import { startWorker } from './worker/index.js';
+
 const PORT = env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  // startWorker(); // STOPPED AS PER USER REQUEST
 });
