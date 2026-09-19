@@ -212,14 +212,15 @@ export function AgentRow({ agent, onToggle, disabled = false }) {
 }
 
 // ── Channel Row (for settings) ──
-export function ChannelRow({ channel, onToggle, disabled = false }) {
+export function ChannelRow({ channel, isPaused, onToggle, disabled = false }) {
   const channelNames = { email: 'Email', linkedin: 'LinkedIn', sms: 'SMS', voice: 'Voice' };
   return (
     <div className={`channel-row ${disabled ? 'channel-row--disabled' : ''}`}>
       <div className="channel-row__info">
         <span className="channel-row__name">{channelNames[channel] || channel}</span>
+        {isPaused && <span className="channel-row__badge" style={{ fontSize: '10px', background: 'var(--danger-soft)', color: 'var(--danger)', padding: '2px 6px', borderRadius: '4px', marginLeft: '8px' }}>PAUSED</span>}
       </div>
-      <Toggle on={!disabled} onChange={(val) => onToggle?.(channel, !val)} ariaLabel={`Pause ${channel} channel`} />
+      <Toggle on={!isPaused} onChange={(val) => onToggle?.(channel, !val)} disabled={disabled} ariaLabel={`Pause ${channel} channel`} />
     </div>
   );
 }

@@ -15,6 +15,7 @@ import KnowledgeBase from './pages/KnowledgeBase';
 import Prompts from './pages/Prompts';
 import ProspectDetail from './pages/ProspectDetail';
 import ReviewQueue from './pages/ReviewQueue';
+import Settings from './pages/Settings';
 
 import './App.css';
 
@@ -57,7 +58,7 @@ function AuthenticatedApp({ user, onSignOut }) {
           <Route path="/review-queue" element={<ReviewQueue />} />
           <Route path="/conflicts" element={<PlaceholderPage title="Conflicts" description="Review domain warmup issues, DMARC warnings, and sending conflicts." />} />
           <Route path="/knowledge" element={<KnowledgeBase />} />
-          <Route path="/settings" element={<PlaceholderPage title="Settings" description="Manage reps, channels, guardrails, and platform costs." />} />
+          <Route path="/settings" element={<Settings />} />
           
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/campaigns" replace />} />

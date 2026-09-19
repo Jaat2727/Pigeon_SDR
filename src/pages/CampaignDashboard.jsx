@@ -12,7 +12,7 @@ import './CampaignDashboard.css';
 export default function CampaignDashboard() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isKilled, setCampaignStatus, loadCampaigns } = useApp();
+  const { isKilled, setCampaignStatus, loadCampaigns, systemControl } = useApp();
 
   const [campaign, setCampaign] = useState(null);
   const [metrics, setMetrics] = useState(null);
@@ -70,7 +70,10 @@ export default function CampaignDashboard() {
   };
 
   const activeChannels = campaign.channels
-    ? Object.entries(campaign.channels).filter(([, v]) => v).map(([k]) => k).join(', ')
+    ? Object.entries(campaign.channels).filter(([, v]) => v).map(([k]) => {
+        const isChanPaused = systemControl?.channel_pauses?.[k];
+        return isChanPaused ? `${k} (Paused)` : k;
+      }).join(', ')
     : '—';
 
   return (

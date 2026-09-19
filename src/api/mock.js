@@ -159,7 +159,7 @@ let _escalations = [
 ];
 
 let _systemControl = {
-  kill_switch_active: false,
+  kill_switch: false,
   channel_pauses: { email: false, linkedin: false, sms: false, voice: false }
 };
 
@@ -192,7 +192,7 @@ export const mockApi = {
   async getSystemControl() { await delay(); return _systemControl; },
   async toggleKillSwitch(engaged) { 
     await delay(); 
-    _systemControl.kill_switch_active = engaged; 
+    _systemControl.kill_switch = engaged; 
     return _systemControl; 
   },
   async setChannelPause(channel, paused) {
@@ -211,5 +211,12 @@ export const mockApi = {
     return { funnel: { discovered: 10, researched: 5, qualified: 2 } }; 
   },
   async getCampaignActivity(id) { await delay(); return []; },
-  async getAgentRuns(id) { await delay(); return []; }
+  async getAgentRuns(id) { 
+    await delay(); 
+    return [
+      { name: 'Research Agent', engine: 'dronahq', runs_today: 45, failures_today: 0, enabled: true },
+      { name: 'ICP Fitment', engine: 'dronahq', runs_today: 40, failures_today: 2, enabled: true },
+      { name: 'Personalisation & Send', engine: 'dronahq', runs_today: 35, failures_today: 0, enabled: true }
+    ]; 
+  }
 };
