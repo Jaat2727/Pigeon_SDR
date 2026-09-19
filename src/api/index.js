@@ -58,6 +58,13 @@ const api = {
   activatePrompt: (promptId) =>
     isUsingMockApi ? mockApi.activatePrompt(promptId) : realApi('post', `/prompts/${promptId}/activate`),
 
+  // ── Escalations ──
+  getEscalations: () =>
+    isUsingMockApi ? mockApi.getEscalations() : realApi('get', '/escalations'),
+
+  resolveEscalation: (id, action) =>
+    isUsingMockApi ? mockApi.resolveEscalation(id, action) : realApi('post', `/escalations/${id}/resolve`, { action }),
+
   // ── Conflicts ──
   getConflicts: () =>
     isUsingMockApi ? mockApi.getConflicts() : realApi('get', '/conflicts'),
