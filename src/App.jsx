@@ -84,11 +84,11 @@ function AuthenticatedApp({ user, onSignOut }) {
 }
 
 function App() {
-  // Default demo user — Kriti Jasuja
+  // Default demo user — Aayush Sharma
   const [user, setUser] = useState({
     id: 'demo-user-kriti',
     email: 'kriti@pigeonsdr.com',
-    user_metadata: { full_name: 'Kriti Jasuja' },
+    user_metadata: { full_name: 'Aayush Sharma' },
   });
   const [loading, setLoading] = useState(false);
 

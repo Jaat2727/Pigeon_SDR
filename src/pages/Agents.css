@@ -2,6 +2,41 @@
    PIGEON SDR — Agents Page
    ═══════════════════════════════════════════════ */
 
+/* Infrastructure banner */
+.agents-infra-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  margin-bottom: 16px;
+  font-size: 12px;
+}
+
+.agents-infra-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--success);
+  animation: pulse-dot 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+.agents-infra-label {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.agents-infra-sep {
+  color: var(--text-muted);
+}
+
+.agents-infra-engine {
+  color: var(--text-secondary);
+}
+
 /* Stats strip */
 .agents-stat-strip {
   display: flex;

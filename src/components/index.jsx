@@ -217,7 +217,6 @@ export function AgentCard({ agent, onToggle, disabled = false }) {
       <div className="agent-card__header">
         <div className="agent-card__status-dot" style={{ background: statusColor }} />
         <div className="agent-card__name">{agent.name}</div>
-        <EngineBadge engine={agent.engine} />
         <Toggle on={!agent.paused} onChange={(val) => onToggle?.(agent.key || agent.name, !val)} disabled={disabled} ariaLabel={`Toggle ${agent.name}`} />
       </div>
       <div className="agent-card__task">{agent.current_task || agent.status}</div>

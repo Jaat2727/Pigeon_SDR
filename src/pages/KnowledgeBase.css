@@ -2,6 +2,129 @@
    Knowledge Base — Agent Context & Document Management
    ═══════════════════════════════════════════════ */
 
+/* Tab bar */
+.kb-tab-bar {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+
+.kb-tab {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: all var(--duration-fast) var(--ease-default);
+  font-family: var(--font-ui);
+}
+
+.kb-tab:hover { color: var(--text-primary); }
+.kb-tab--active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* Body layouts */
+.kb-body-single { max-width: 720px; }
+.kb-body-campaigns { display: flex; flex-direction: column; gap: 16px; }
+
+/* Campaign selector */
+.kb-campaign-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.kb-campaign-tab {
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-card);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-default);
+  font-family: var(--font-ui);
+}
+
+.kb-campaign-tab:hover { border-color: var(--border-strong); color: var(--text-primary); }
+.kb-campaign-tab--active { border-color: var(--accent-light); background: var(--accent-soft); color: var(--accent); }
+
+/* Search bar */
+.kb-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 7px 14px;
+  width: 280px;
+}
+
+.kb-search-bar input {
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-family: var(--font-ui);
+  color: var(--text-primary);
+  outline: none;
+  width: 100%;
+}
+
+/* Category accordion */
+.kb-category { overflow: hidden; }
+
+.kb-category__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  text-align: left;
+  transition: background var(--duration-fast) var(--ease-default);
+}
+
+.kb-category__header:hover { background: var(--surface-raised); }
+
+.kb-category__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 1;
+}
+
+.kb-category__count {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.kb-category__files {
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* File status */
+.kb-file-status {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 /* ── Layout ── */
 .kb-page {
   max-width: 1400px;

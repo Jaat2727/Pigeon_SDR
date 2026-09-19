@@ -26,6 +26,57 @@ const AGENT_PERF = [
   { name: 'Voice SDR Agent',         runs: 14,  success: 82, failures: 1,   cost: 0.12, value: 'Completed 14 calls' },
 ];
 
+// ── SVG Donut Chart ──
+function DonutChart({ segments, center, label }) {
+  const SIZE = 120;
+  const R = 46;
+  const CX = SIZE / 2;
+  const CY = SIZE / 2;
+  const circ = 2 * Math.PI * R;
+
+  let offset = 0;
+  const total = segments.reduce((s, seg) => s + seg.value, 0);
+
+  const arcs = segments.map(seg => {
+    const frac = total > 0 ? seg.value / total : 0;
+    const dash = frac * circ;
+    const arc = { ...seg, dash, gap: circ - dash, offset };
+    offset += dash;
+    return arc;
+  });
+
+  return (
+    <div className="donut-wrap">
+      <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`}>
+        {arcs.map((arc, i) => (
+          <circle
+            key={i}
+            cx={CX} cy={CY} r={R}
+            fill="none"
+            stroke={arc.color}
+            strokeWidth={14}
+            strokeDasharray={`${arc.dash} ${arc.gap}`}
+            strokeDashoffset={-arc.offset}
+            style={{ transform: 'rotate(-90deg)', transformOrigin: `${CX}px ${CY}px`, transition: 'all 0.6s ease' }}
+          />
+        ))}
+        <text x={CX} y={CY - 6} textAnchor="middle" fontSize="14" fontWeight="700" fill="var(--text-primary)" fontFamily="var(--font-mono)">{center}</text>
+        <text x={CX} y={CY + 12} textAnchor="middle" fontSize="8" fill="var(--text-muted)" fontFamily="var(--font-ui)" textTransform="uppercase">{label}</text>
+      </svg>
+      <div className="donut-legend">
+        {segments.map((seg, i) => (
+          <div key={i} className="donut-legend-row">
+            <span className="donut-legend-dot" style={{ background: seg.color }} />
+            <span className="donut-legend-label">{seg.label}</span>
+            <span className="donut-legend-val">{seg.pct}%</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+
 function MetricRow({ label, value, sub, color, barPct }) {
   return (
     <div className="metric-row">
@@ -244,34 +295,51 @@ export default function Analytics() {
 
         {/* Right */}
         <div className="analytics-right">
-          {/* Channel performance */}
+          {/* Channel Mix donut */}
           <div className="card" style={{ marginBottom: 16 }}>
             <div className="card__header">
-              <span className="card__title">Channel Performance</span>
+              <span className="card__title">Channel Mix</span>
             </div>
-            <div style={{ padding: '4px 0' }}>
-              {CHANNEL_DATA.map(ch => {
-                const Icon = ch.icon;
-                return (
-                  <div key={ch.channel} className="channel-analytics-row">
-                    <div className="channel-analytics-row__icon" style={{ color: ch.color }}>
-                      <Icon size={14} />
-                    </div>
-                    <div className="channel-analytics-row__info">
-                      <div className="channel-analytics-row__name">{ch.channel}</div>
-                      <ProgressBar value={ch.reply_rate * 4} color={ch.color} height={3} />
-                    </div>
-                    <div className="channel-analytics-row__stats">
-                      <span className="channel-analytics-row__rate" style={{ color: ch.color }}>
-                        {ch.reply_rate}%
-                      </span>
-                      <span className="channel-analytics-row__sub">{ch.meetings} mtgs</span>
-                    </div>
-                  </div>
-                );
-              })}
+            <div style={{ padding: '8px 16px 12px' }}>
+              <DonutChart
+                center={totalSent || 869}
+                label="messages"
+                segments={[
+                  { label: 'Email',    value: 540, pct: 42, color: '#4F46E5' },
+                  { label: 'LinkedIn', value: 205, pct: 28, color: '#0077B5' },
+                  { label: 'SMS',      value: 110, pct: 18, color: '#059669' },
+                  { label: 'Voice',    value: 14,  pct: 12, color: '#F59E0B' },
+                ]}
+              />
             </div>
           </div>
+
+          {/* Campaign Contribution donut */}
+          {metrics.length > 0 && (
+            <div className="card" style={{ marginBottom: 16 }}>
+              <div className="card__header">
+                <span className="card__title">Campaign Contribution</span>
+              </div>
+              <div style={{ padding: '8px 16px 12px' }}>
+                <DonutChart
+                  center={`${totalMeetings || 0}`}
+                  label="meetings"
+                  segments={metrics.map((m, i) => {
+                    const colors = ['#4F46E5', '#059669', '#F59E0B'];
+                    const pct = totalMeetings > 0
+                      ? Math.round((m.meetings_booked / totalMeetings) * 100)
+                      : Math.round(100 / metrics.length);
+                    return {
+                      label: m.campaign?.name?.split(' ')[0] || `Campaign ${i + 1}`,
+                      value: m.meetings_booked || 1,
+                      pct,
+                      color: m.campaign?.colour || colors[i % colors.length],
+                    };
+                  })}
+                />
+              </div>
+            </div>
+          )}
 
           {/* Cost metrics */}
           <div className="card">

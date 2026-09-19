@@ -181,12 +181,12 @@ export default function DashboardLayout({ children, user }) {
           {/* User */}
           <div className="sidebar-user">
             <img
-              src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.user_metadata?.full_name || 'Kriti Jasuja')}&background=4F46E5&color=fff&size=64&bold=true`}
+              src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.user_metadata?.full_name || 'Aayush Sharma')}&background=4F46E5&color=fff&size=64&bold=true`}
               alt="User"
               className="sidebar-user-avatar"
             />
             <div className="sidebar-user-info">
-              <div className="sidebar-user-name">{user?.user_metadata?.full_name || 'Kriti Jasuja'}</div>
+              <div className="sidebar-user-name">{user?.user_metadata?.full_name || 'Aayush Sharma'}</div>
               <div className="sidebar-user-team">Growth Team</div>
             </div>
           </div>
@@ -260,11 +260,11 @@ export default function DashboardLayout({ children, user }) {
             {/* Profile */}
             <div className="topbar-profile">
               <img
-                src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.user_metadata?.full_name || 'Kriti Jasuja')}&background=4F46E5&color=fff&size=64&bold=true`}
+                src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.user_metadata?.full_name || 'Aayush Sharma')}&background=4F46E5&color=fff&size=64&bold=true`}
                 alt="Profile"
               />
               <div className="topbar-profile-info">
-                <span className="topbar-profile-name">{user?.user_metadata?.full_name || 'Kriti Jasuja'}</span>
+                <span className="topbar-profile-name">{user?.user_metadata?.full_name || 'Aayush Sharma'}</span>
                 <span className="topbar-profile-role">Growth Team</span>
               </div>
             </div>

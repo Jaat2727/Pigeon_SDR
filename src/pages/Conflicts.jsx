@@ -1,138 +1,278 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle } from 'lucide-react';
+import { ArrowUpDown, CheckCircle, Inbox } from 'lucide-react';
 import api from '../api/index.js';
 import { useApp } from '../context/AppContext';
-import { LoadingState, ErrorState, ConfirmDialog } from '../components/index.jsx';
+import { LoadingState, ErrorState, EmptyState, Drawer } from '../components/index.jsx';
+import './Conflicts.css';
+
+const CONFLICT_TYPE_LABELS = {
+  duplicate_prospect:    'Duplicate Prospect',
+  multi_campaign_touch:  'Multi-Campaign Touch',
+  manual_review:         'Manual Review',
+  suppression_conflict:  'Suppression Conflict',
+};
+
+const AI_RECOMMENDATIONS = {
+  duplicate_prospect:   'Keep the higher-priority campaign and suppress the second.',
+  multi_campaign_touch: 'Allow the primary campaign to proceed and pause outreach from the secondary.',
+  manual_review:        'Review contact history before continuing any outreach.',
+  suppression_conflict: 'Verify suppression status before any further contact.',
+};
+
+function timeAgo(dateStr) {
+  const mins = Math.floor((Date.now() - new Date(dateStr)) / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
+const RESOLUTION_OPTIONS = [
+  { id: 'keep_a',        label: 'Keep Campaign A — suppress Campaign B' },
+  { id: 'keep_b',        label: 'Keep Campaign B — suppress Campaign A' },
+  { id: 'suppress_both', label: 'Suppress both campaigns for this prospect' },
+  { id: 'allow_both',    label: 'Allow both campaigns to continue' },
+];
 
 export default function Conflicts() {
-  const navigate = useNavigate();
   const { loadConflicts: reloadGlobalConflicts } = useApp();
-  const [conflicts, setConflicts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [resolving, setResolving] = useState(null); // conflict being resolved
+  const [conflicts, setConflicts]   = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [error, setError]           = useState(null);
+  const [drawer, setDrawer]         = useState(null);
+  const [resolution, setResolution] = useState('keep_a');
+  const [resolving, setResolving]   = useState(false);
 
   useEffect(() => {
     let mounted = true;
-    async function load() {
-      try {
-        const data = await api.getConflicts();
-        if (mounted) setConflicts(data);
-      } catch (err) {
-        if (mounted) setError(err.message);
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    }
-    load();
+    api.getConflicts()
+      .then(data => { if (mounted) setConflicts(data); })
+      .catch(err => { if (mounted) setError(err.message); })
+      .finally(() => { if (mounted) setLoading(false); });
     return () => { mounted = false; };
   }, []);
 
-  const handleResolve = async (conflictId, winningCampaignId) => {
+  const openDrawer = (c) => { setDrawer(c); setResolution('keep_a'); };
+
+  const handleResolve = async () => {
+    if (!drawer) return;
+    setResolving(true);
     try {
-      await api.resolveConflict(conflictId, winningCampaignId);
-      setConflicts(prev => prev.filter(c => c.id !== conflictId));
-      setResolving(null);
+      // Map resolution option to winning campaign id
+      const winId = resolution === 'keep_a'
+        ? drawer.campaign_ids?.[0]
+        : resolution === 'keep_b'
+          ? drawer.campaign_ids?.[1]
+          : resolution;
+      await api.resolveConflict(drawer.id, winId);
+      setConflicts(prev => prev.filter(c => c.id !== drawer.id));
+      setDrawer(null);
       await reloadGlobalConflicts();
-    } catch (err) {
-      console.error('Failed to resolve conflict:', err);
-    }
+    } catch (e) { console.error(e); }
+    finally { setResolving(false); }
   };
 
-  if (loading) return <LoadingState message="Checking for conflicts..." />;
-  if (error) return <ErrorState message={error} onRetry={() => window.location.reload()} />;
+  // Summary counts by type
+  const types = conflicts.reduce((acc, c) => {
+    const t = c.type || c.conflict_type || 'manual_review';
+    acc[t] = (acc[t] || 0) + 1;
+    return acc;
+  }, {});
+
+  if (loading) return <LoadingState message="Scanning for conflicts…" />;
+  if (error)   return <ErrorState message={error} onRetry={() => window.location.reload()} />;
 
   return (
     <div className="page animate-in">
-      <div className="page-header" style={{ marginBottom: 'var(--sp-6)' }}>
+      <div className="page-header">
         <div>
-          <h1 className="page-title">Conflicts</h1>
-          <p className="page-subtitle">Review and resolve prospect campaign overlaps.</p>
+          <h1 className="page-title">Conflict Center</h1>
+          <p className="page-subtitle">Resolve overlapping campaigns and duplicate outreach targeting the same prospect.</p>
         </div>
       </div>
 
-      <div className="card">
-        {conflicts.length === 0 ? (
-          <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>
-            <AlertTriangle size={32} style={{ opacity: 0.3, marginBottom: '16px' }} />
-            <h3>No conflicts detected</h3>
-            <p>All prospects are cleanly assigned to single campaigns.</p>
+      {/* Summary strip */}
+      {conflicts.length > 0 && (
+        <div className="conf-summary-strip">
+          <div className="conf-summary-cell conf-summary-cell--total">
+            <span className="conf-summary-value">{conflicts.length}</span>
+            <span className="conf-summary-label">Active Conflicts</span>
           </div>
-        ) : (
-          <table className="campaigns-table">
-            <thead>
-              <tr>
-                <th className="th-name">Prospect</th>
-                <th>Conflicting Campaigns</th>
-                <th>Last Touch</th>
-                <th>Resolution Rule</th>
-                <th className="th-action">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {conflicts.map(c => (
-                <tr key={c.id}>
-                  <td className="td-name">
-                    <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{c.prospect_name}</div>
-                  </td>
-                  <td>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      {c.campaigns.map((camp, i) => (
-                        <span key={i} style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{camp}</span>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="font-mono" style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                    {new Date(c.last_touch).toLocaleString()}
-                  </td>
-                  <td>
-                    <span className={`badge ${c.rule.includes('Manual') ? 'badge--danger' : 'badge--neutral'}`} style={{ fontSize: '11px' }}>
-                      {c.rule}
-                    </span>
-                  </td>
-                  <td className="td-action">
-                    <button
-                      className="btn btn--secondary btn--sm"
-                      onClick={() => setResolving(c)}
-                    >
-                      Resolve
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-
-      {/* Resolve Dialog — pick winning campaign */}
-      {resolving && (
-        <div className="confirm-overlay" onClick={() => setResolving(null)}>
-          <div className="confirm-dialog animate-in" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px' }}>
-            <h3 className="confirm-dialog__title">Resolve Conflict</h3>
-            <p className="confirm-dialog__message">
-              <strong>{resolving.prospect_name}</strong> is claimed by multiple campaigns. Choose which campaign wins:
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', margin: '16px 0' }}>
-              {resolving.campaigns.map((camp, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  className="btn btn--secondary"
-                  style={{ justifyContent: 'flex-start' }}
-                  onClick={() => handleResolve(resolving.id, resolving.campaign_ids?.[i] || camp)}
-                >
-                  Assign to: {camp}
-                </button>
-              ))}
-            </div>
-            <div className="confirm-dialog__actions">
-              <button type="button" className="btn btn--ghost" onClick={() => setResolving(null)}>Cancel</button>
-            </div>
+          <div className="conf-summary-cell">
+            <span className="conf-summary-value">{types['duplicate_prospect'] || 0}</span>
+            <span className="conf-summary-label">Duplicate Prospects</span>
+          </div>
+          <div className="conf-summary-cell">
+            <span className="conf-summary-value">{types['multi_campaign_touch'] || 0}</span>
+            <span className="conf-summary-label">Multi-Campaign Touch</span>
+          </div>
+          <div className="conf-summary-cell">
+            <span className="conf-summary-value">{types['manual_review'] || 0}</span>
+            <span className="conf-summary-label">Manual Review</span>
           </div>
         </div>
       )}
+
+      {conflicts.length === 0 ? (
+        <EmptyState
+          icon={CheckCircle}
+          title="No conflicts detected"
+          message="All prospects are cleanly assigned to single campaigns. The system is operating without overlap."
+        />
+      ) : (
+        <div className="conf-grid">
+          {conflicts.map(c => {
+            const campA = c.campaigns?.[0] || 'Campaign A';
+            const campB = c.campaigns?.[1] || 'Campaign B';
+            const type = c.type || c.conflict_type || 'manual_review';
+            const rec = AI_RECOMMENDATIONS[type] || 'Review and resolve manually.';
+            return (
+              <div key={c.id} className="conf-card card">
+                {/* Prospect */}
+                <div className="conf-card__prospect">
+                  <div className="conf-card__avatar">
+                    {(c.prospect_name || 'P')[0].toUpperCase()}
+                  </div>
+                  <div>
+                    <div className="conf-card__name">{c.prospect_name}</div>
+                    <div className="conf-card__type-badge">
+                      {CONFLICT_TYPE_LABELS[type] || type}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Campaign conflict visual */}
+                <div className="conf-card__campaigns">
+                  <div className="conf-card__campaign conf-card__campaign--a">
+                    {campA}
+                  </div>
+                  <div className="conf-card__vs">
+                    <ArrowUpDown size={14} style={{ color: 'var(--warning)' }} />
+                  </div>
+                  <div className="conf-card__campaign conf-card__campaign--b">
+                    {campB}
+                  </div>
+                </div>
+
+                {/* Last touch */}
+                <div className="conf-card__meta">
+                  <div className="conf-card__meta-row">
+                    <span className="conf-card__meta-label">Last touch</span>
+                    <span className="conf-card__meta-value">
+                      {c.last_touch_channel
+                        ? `${c.last_touch_channel} · ${timeAgo(c.last_touch)}`
+                        : timeAgo(c.last_touch)}
+                    </span>
+                  </div>
+                  <div className="conf-card__meta-row">
+                    <span className="conf-card__meta-label">AI recommendation</span>
+                    <span className="conf-card__meta-value conf-card__rec">{rec}</span>
+                  </div>
+                </div>
+
+                <button
+                  className="btn btn--secondary btn--sm conf-card__resolve-btn"
+                  onClick={() => openDrawer(c)}
+                >
+                  Resolve conflict
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Resolution Drawer */}
+      <Drawer
+        open={!!drawer}
+        onClose={() => setDrawer(null)}
+        title="Resolve Conflict"
+        width={480}
+      >
+        {drawer && (
+          <div className="conf-drawer">
+            <div className="conf-drawer__prospect">
+              <div className="conf-card__avatar" style={{ width: 40, height: 40, fontSize: 16 }}>
+                {(drawer.prospect_name || 'P')[0].toUpperCase()}
+              </div>
+              <div>
+                <div className="conf-drawer__name">{drawer.prospect_name}</div>
+                <div className="conf-drawer__sub">
+                  {CONFLICT_TYPE_LABELS[drawer.type || drawer.conflict_type] || 'Conflict'}
+                </div>
+              </div>
+            </div>
+
+            {/* Campaigns */}
+            <div className="conf-drawer-section">
+              <div className="conf-drawer-section-label">Conflicting Campaigns</div>
+              <div className="conf-drawer-campaigns">
+                {(drawer.campaigns || []).map((camp, i) => (
+                  <div key={i} className="conf-drawer-camp">
+                    <div className="conf-drawer-camp__label">Campaign {i === 0 ? 'A' : 'B'}</div>
+                    <div className="conf-drawer-camp__name">{camp}</div>
+                    <div className="conf-drawer-camp__priority">
+                      Priority: {i === 0 ? 'High' : 'Medium'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Context */}
+            <div className="conf-drawer-section">
+              <div className="conf-drawer-section-label">Context</div>
+              <div className="conf-drawer-detail-row">
+                <span>Last touch</span>
+                <span>{drawer.last_touch_channel ? `${drawer.last_touch_channel} · ` : ''}{timeAgo(drawer.last_touch)}</span>
+              </div>
+              {drawer.next_action && (
+                <div className="conf-drawer-detail-row">
+                  <span>Next scheduled</span>
+                  <span>{drawer.next_action}</span>
+                </div>
+              )}
+              <div className="conf-drawer-detail-row">
+                <span>Contact frequency</span>
+                <span>{drawer.contact_count || '—'} touches</span>
+              </div>
+            </div>
+
+            {/* Resolution options */}
+            <div className="conf-drawer-section">
+              <div className="conf-drawer-section-label">Resolution</div>
+              <div className="conf-drawer-options">
+                {RESOLUTION_OPTIONS.map(opt => (
+                  <label key={opt.id} className={`conf-drawer-option ${resolution === opt.id ? 'conf-drawer-option--selected' : ''}`}>
+                    <input
+                      type="radio"
+                      name="resolution"
+                      value={opt.id}
+                      checked={resolution === opt.id}
+                      onChange={() => setResolution(opt.id)}
+                    />
+                    <span>{opt.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 8, paddingTop: 16, borderTop: '1px solid var(--border-subtle)' }}>
+              <button className="btn btn--secondary" onClick={() => setDrawer(null)}>Cancel</button>
+              <button
+                className="btn btn--primary"
+                onClick={handleResolve}
+                disabled={resolving}
+                style={{ flex: 1 }}
+              >
+                {resolving ? 'Resolving…' : 'Confirm Resolution'}
+              </button>
+            </div>
+          </div>
+        )}
+      </Drawer>
     </div>
   );
 }

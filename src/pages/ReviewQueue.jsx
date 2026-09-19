@@ -1,253 +1,309 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, X, Edit2, AlertCircle, Save, Inbox, ChevronRight, Clock } from 'lucide-react';
+import {
+  Check, X, Edit2, Save, Inbox, Clock, AlertTriangle,
+  ChevronRight, ShieldAlert, Info,
+} from 'lucide-react';
 import api from '../api/index.js';
 import { useApp } from '../context/AppContext';
-import {
-  LoadingState, ErrorState, EngineBadge, RiskBadge,
-  StatusPill, EmptyState, Drawer,
-} from '../components/index.jsx';
+import { LoadingState, ErrorState, EmptyState, Drawer, RiskBadge } from '../components/index.jsx';
 import './ReviewQueue.css';
+
+const TYPE_LABELS = {
+  needs_review:       'Needs Review',
+  needs_human:        'Needs Human',
+  escalate_to_human:  'Escalated',
+  objection_detected: 'Objection Detected',
+};
+
+const RISK_COLOR = {
+  high:   'var(--danger)',
+  medium: 'var(--warning)',
+  low:    'var(--text-secondary)',
+};
+
+function timeAgo(dateStr) {
+  const mins = Math.floor((Date.now() - new Date(dateStr)) / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  return `${Math.floor(mins / 60)}h ago`;
+}
 
 export default function ReviewQueue() {
   const navigate = useNavigate();
   const { loadEscalations } = useApp();
 
   const [escalations, setEscalations] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [editingId, setEditingId] = useState(null);
-  const [editValue, setEditValue] = useState('');
-  const [selectedEsc, setSelectedEsc] = useState(null);
-  const [actionLoading, setActionLoading] = useState(null);
+  const [loading, setLoading]         = useState(true);
+  const [error, setError]             = useState(null);
+  const [drawer, setDrawer]           = useState(null);   // esc being viewed
+  const [editText, setEditText]       = useState('');
+  const [isEditing, setIsEditing]     = useState(false);
+  const [acting, setActing]           = useState(null);
 
   const loadQueue = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await api.getEscalations();
-      setEscalations(data);
-    } catch (err) {
-      setError(err.message || 'Failed to load approvals');
-    } finally {
-      setLoading(false);
-    }
+    setLoading(true); setError(null);
+    try { setEscalations(await api.getEscalations()); }
+    catch (e) { setError(e.message || 'Failed to load'); }
+    finally { setLoading(false); }
   }, []);
 
   useEffect(() => { loadQueue(); }, [loadQueue]);
 
-  const handleAction = async (id, actionStr) => {
-    setActionLoading(id + actionStr);
+  const act = useCallback(async (id, action) => {
+    setActing(id + action);
     try {
-      await api.resolveEscalation(id, actionStr);
-      setEditingId(null);
-      setEditValue('');
-      setSelectedEsc(null);
-      await loadQueue();
+      await api.resolveEscalation(id, action);
+      setEscalations(prev => prev.filter(e => e.id !== id));
+      if (drawer?.id === id) setDrawer(null);
       await loadEscalations();
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setActionLoading(null);
-    }
+    } catch (e) { console.error(e); }
+    finally { setActing(null); }
+  }, [drawer, loadEscalations]);
+
+  const openDrawer = (esc) => {
+    setDrawer(esc);
+    setEditText(esc.proposed_action || '');
+    setIsEditing(false);
   };
 
-  const typeConfig = {
-    needs_review:     { label: 'Needs Review',    color: 'var(--warning)' },
-    needs_human:      { label: 'Needs Human',      color: 'var(--accent)' },
-    escalate_to_human:{ label: 'Escalated',        color: 'var(--danger)' },
-    objection_detected:{ label: 'Objection',       color: 'var(--warning)' },
-  };
+  // Summary counts
+  const high   = escalations.filter(e => e.risk_level === 'high').length;
+  const medium = escalations.filter(e => e.risk_level === 'medium').length;
+  const low    = escalations.filter(e => !e.risk_level || e.risk_level === 'low').length;
 
   if (loading) return <LoadingState message="Loading approvals…" />;
-  if (error) return <ErrorState message={error} onRetry={loadQueue} />;
+  if (error)   return <ErrorState message={error} onRetry={loadQueue} />;
 
   return (
     <div className="page animate-in">
+      {/* ── Header ── */}
       <div className="page-header">
         <div>
           <h1 className="page-title">Approval Center</h1>
           <p className="page-subtitle">
             {escalations.length > 0
-              ? `${escalations.length} item${escalations.length > 1 ? 's' : ''} awaiting your decision — approve, edit, or reject agent actions.`
-              : 'All caught up — no pending approvals.'
-            }
+              ? `${escalations.length} item${escalations.length !== 1 ? 's' : ''} awaiting your decision`
+              : 'All caught up — no pending approvals'}
           </p>
         </div>
-        {escalations.length > 0 && (
-          <div className="badge badge--danger" style={{ padding: '6px 12px', fontSize: 13 }}>
-            {escalations.length} Pending
-          </div>
-        )}
       </div>
 
+      {/* ── Summary strip ── */}
+      {escalations.length > 0 && (
+        <div className="aq-summary-strip">
+          <div className="aq-summary-cell">
+            <span className="aq-summary-value">{escalations.length}</span>
+            <span className="aq-summary-label">Total Pending</span>
+          </div>
+          <div className="aq-summary-cell aq-summary-cell--danger">
+            <span className="aq-summary-value">{high}</span>
+            <span className="aq-summary-label">High Risk</span>
+          </div>
+          <div className="aq-summary-cell aq-summary-cell--warning">
+            <span className="aq-summary-value">{medium}</span>
+            <span className="aq-summary-label">Medium Risk</span>
+          </div>
+          <div className="aq-summary-cell">
+            <span className="aq-summary-value">{low}</span>
+            <span className="aq-summary-label">Low Risk</span>
+          </div>
+        </div>
+      )}
+
+      {/* ── Inbox list ── */}
       {escalations.length === 0 ? (
         <EmptyState
           icon={Inbox}
-          title="Approval queue is clear"
-          message="All agents are operating autonomously without requiring human review."
+          title="Approval inbox is clear"
+          message="Agents are operating autonomously — nothing needs your decision right now."
         />
       ) : (
-        <div className="approvals-list">
-          {escalations.map(esc => {
-            const type = typeConfig[esc.escalation_type] || { label: esc.escalation_type, color: 'var(--text-secondary)' };
-            const isEditing = editingId === esc.id;
-            const timeAgo = getTimeAgo(esc.created_at);
+        <div className="card aq-inbox">
+          {/* Column header */}
+          <div className="aq-inbox-header">
+            <span style={{ width: 72 }}>Risk</span>
+            <span style={{ flex: 1.2 }}>Agent</span>
+            <span style={{ flex: 2 }}>Campaign · Prospect</span>
+            <span style={{ flex: 1.5 }}>Reason</span>
+            <span style={{ width: 60, textAlign: 'right' }}>Time</span>
+            <span style={{ width: 100 }} />
+          </div>
 
-            return (
-              <div key={esc.id} className={`approval-card card ${esc.risk_level === 'high' ? 'approval-card--high' : ''}`}>
-                {/* Header */}
-                <div className="approval-card__header">
-                  <div className="approval-card__header-left">
-                    {esc.risk_level && <RiskBadge level={esc.risk_level} />}
-                    <div className="approval-card__type" style={{ color: type.color }}>
-                      {type.label}
-                    </div>
-                    <EngineBadge engine="dronahq" />
-                    <strong style={{ color: 'var(--text-primary)', fontSize: 13 }}>{esc.source_agent}</strong>
-                  </div>
-                  <div className="approval-card__time">
-                    <Clock size={11} /> {timeAgo}
-                  </div>
-                </div>
-
-                {/* Meta */}
-                <div className="approval-card__meta">
-                  <span>Campaign: <strong
-                    style={{ cursor: 'pointer', color: 'var(--accent)' }}
-                    onClick={() => navigate(`/campaigns/${esc.campaign_id}`)}>
-                    {esc.campaign_name || esc.campaign_id}
-                  </strong></span>
-                  <span className="approval-card__sep" />
-                  <span>Prospect: <strong
-                    style={{ cursor: 'pointer', color: 'var(--accent)' }}
-                    onClick={() => navigate(`/prospects/${esc.prospect_id}`)}>
-                    {esc.prospect_name || esc.prospect_id}
-                  </strong></span>
-                </div>
-
-                {/* Proposed action */}
-                <div className="approval-card__body">
-                  <div className="approval-card__body-label">Proposed Action / Draft Content</div>
-                  {isEditing ? (
-                    <textarea
-                      className="form-control"
-                      value={editValue}
-                      onChange={(e) => setEditValue(e.target.value)}
-                      rows={5}
-                      autoFocus
-                    />
-                  ) : (
-                    <div className="approval-card__content" onClick={() => setSelectedEsc(esc)}>
-                      {esc.proposed_action}
-                    </div>
-                  )}
-                </div>
-
-                {/* Actions */}
-                <div className="approval-card__footer">
-                  <button
-                    type="button"
-                    className="btn btn--danger-outline btn--sm"
-                    onClick={() => handleAction(esc.id, 'rejected')}
-                    disabled={!!actionLoading}
-                  >
-                    <X size={13} /> Reject
-                  </button>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    {isEditing ? (
-                      <>
-                        <button type="button" className="btn btn--ghost btn--sm" onClick={() => setEditingId(null)}>Cancel</button>
-                        <button
-                          type="button"
-                          className="btn btn--success btn--sm"
-                          onClick={() => handleAction(esc.id, 'approved')}
-                          disabled={!!actionLoading}
-                        >
-                          <Save size={13} /> Save & Approve
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          type="button"
-                          className="btn btn--secondary btn--sm"
-                          onClick={() => { setEditingId(esc.id); setEditValue(esc.proposed_action); }}
-                        >
-                          <Edit2 size={13} /> Edit
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn--success btn--sm"
-                          onClick={() => handleAction(esc.id, 'approved')}
-                          disabled={!!actionLoading}
-                        >
-                          <Check size={13} /> Approve
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
+          {escalations.map(esc => (
+            <div
+              key={esc.id}
+              className={`aq-row ${esc.risk_level === 'high' ? 'aq-row--high' : ''}`}
+            >
+              {/* Risk */}
+              <div style={{ width: 72, flexShrink: 0 }}>
+                <span
+                  className="aq-risk-dot"
+                  style={{ color: RISK_COLOR[esc.risk_level] || 'var(--text-muted)' }}
+                >
+                  {esc.risk_level === 'high' && <ShieldAlert size={13} />}
+                  {esc.risk_level === 'medium' && <AlertTriangle size={13} />}
+                  {(!esc.risk_level || esc.risk_level === 'low') && <Info size={13} />}
+                  <span className="aq-risk-label">{esc.risk_level || 'low'}</span>
+                </span>
               </div>
-            );
-          })}
+
+              {/* Agent */}
+              <div className="aq-cell" style={{ flex: 1.2 }}>
+                <span className="aq-agent">{esc.source_agent}</span>
+                <span className="aq-type">{TYPE_LABELS[esc.escalation_type] || esc.escalation_type}</span>
+              </div>
+
+              {/* Campaign · Prospect */}
+              <div className="aq-cell" style={{ flex: 2 }}>
+                <span className="aq-primary">
+                  {esc.prospect_name || esc.prospect_id}
+                </span>
+                <span className="aq-secondary">
+                  {esc.campaign_name || esc.campaign_id}
+                </span>
+              </div>
+
+              {/* Reason — truncated */}
+              <div className="aq-cell" style={{ flex: 1.5 }}>
+                <span className="aq-reason">
+                  {(esc.proposed_action || '').substring(0, 60)}{esc.proposed_action?.length > 60 ? '…' : ''}
+                </span>
+              </div>
+
+              {/* Time */}
+              <div style={{ width: 60, flexShrink: 0, textAlign: 'right' }}>
+                <span className="aq-time">{timeAgo(esc.created_at)}</span>
+              </div>
+
+              {/* Action */}
+              <div style={{ width: 100, flexShrink: 0, display: 'flex', justifyContent: 'flex-end' }}>
+                <button
+                  className="btn btn--ghost btn--sm"
+                  onClick={() => openDrawer(esc)}
+                  style={{ fontSize: 12, gap: 4 }}
+                >
+                  View <ChevronRight size={12} />
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
-      {/* Detail drawer */}
-      {selectedEsc && (
-        <Drawer
-          open={!!selectedEsc}
-          onClose={() => setSelectedEsc(null)}
-          title="Approval Detail"
-          width={460}
-        >
-          <EscalationDetail esc={selectedEsc} onAction={handleAction} actionLoading={actionLoading} navigate={navigate} />
-        </Drawer>
-      )}
+      {/* ── Detail Drawer ── */}
+      <Drawer
+        open={!!drawer}
+        onClose={() => setDrawer(null)}
+        title="Approval Detail"
+        width={500}
+      >
+        {drawer && (
+          <ApprovalDrawer
+            esc={drawer}
+            editText={editText}
+            setEditText={setEditText}
+            isEditing={isEditing}
+            setIsEditing={setIsEditing}
+            acting={acting}
+            onAct={act}
+            navigate={navigate}
+          />
+        )}
+      </Drawer>
     </div>
   );
 }
 
-function EscalationDetail({ esc, onAction, actionLoading, navigate }) {
+function ApprovalDrawer({ esc, editText, setEditText, isEditing, setIsEditing, acting, onAct, navigate }) {
+  const rows = [
+    { label: 'Prospect', value: esc.prospect_name, link: `/prospects/${esc.prospect_id}` },
+    { label: 'Campaign', value: esc.campaign_name, link: `/campaigns/${esc.campaign_id}` },
+    { label: 'Agent',    value: esc.source_agent },
+    { label: 'Type',     value: TYPE_LABELS[esc.escalation_type] || esc.escalation_type },
+    { label: 'Risk',     value: <RiskBadge level={esc.risk_level} /> },
+    { label: 'Flagged',  value: timeAgo(esc.created_at) },
+  ];
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-      {[
-        { label: 'Agent', value: esc.source_agent },
-        { label: 'Campaign', value: esc.campaign_name },
-        { label: 'Prospect', value: esc.prospect_name, link: `/prospects/${esc.prospect_id}` },
-        { label: 'Type', value: esc.escalation_type },
-        { label: 'Risk Level', value: <RiskBadge level={esc.risk_level} /> },
-        {
-          label: 'Proposed Action / Content',
-          value: <div style={{ whiteSpace: 'pre-wrap', fontSize: 12, lineHeight: 1.6, background: 'var(--surface-raised)', padding: '12px', borderRadius: 8 }}>{esc.proposed_action}</div>
-        },
-      ].map(({ label, value, link }) => (
-        <div key={label} style={{ padding: '12px 0', borderBottom: '1px solid var(--border-subtle)' }}>
-          <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 5 }}>{label}</div>
-          {link
-            ? <button className="btn btn--ghost btn--sm" style={{ fontSize: 12, padding: '2px 6px' }} onClick={() => navigate(link)}>{value} <ChevronRight size={10} /></button>
-            : <div style={{ fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.5 }}>{value}</div>
-          }
+    <div className="aq-drawer">
+      {/* Meta rows */}
+      <div className="aq-drawer-meta">
+        {rows.map(r => (
+          <div key={r.label} className="aq-drawer-meta-row">
+            <span className="aq-drawer-label">{r.label}</span>
+            {r.link
+              ? <button className="btn btn--ghost btn--sm" style={{ padding: '2px 6px', fontSize: 12 }} onClick={() => navigate(r.link)}>{r.value} <ChevronRight size={10} /></button>
+              : <span className="aq-drawer-value">{r.value}</span>
+            }
+          </div>
+        ))}
+      </div>
+
+      {/* Proposed action / content */}
+      <div className="aq-drawer-section">
+        <div className="aq-drawer-section-label">Proposed Action</div>
+        {isEditing ? (
+          <textarea
+            className="form-control"
+            rows={6}
+            value={editText}
+            onChange={e => setEditText(e.target.value)}
+            autoFocus
+          />
+        ) : (
+          <div className="aq-drawer-content">{esc.proposed_action}</div>
+        )}
+      </div>
+
+      {/* Suggested action */}
+      <div className="aq-drawer-section">
+        <div className="aq-drawer-section-label">Suggested Next Move</div>
+        <div className="aq-drawer-suggestion">
+          {esc.risk_level === 'high'
+            ? 'Reject this action — risk of compliance violation or reputation damage.'
+            : esc.risk_level === 'medium'
+              ? 'Review carefully before approving. Consider editing the message first.'
+              : 'Looks reasonable — approve or edit before sending.'}
         </div>
-      ))}
-      <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-        <button className="btn btn--danger-outline" onClick={() => onAction(esc.id, 'rejected')} disabled={!!actionLoading}>
+      </div>
+
+      {/* Actions */}
+      <div className="aq-drawer-actions">
+        <button
+          className="btn btn--danger-outline"
+          onClick={() => onAct(esc.id, 'rejected')}
+          disabled={!!acting}
+        >
           <X size={14} /> Reject
         </button>
-        <button className="btn btn--success" onClick={() => onAction(esc.id, 'approved')} disabled={!!actionLoading}>
-          <Check size={14} /> Approve
-        </button>
+
+        {isEditing ? (
+          <>
+            <button className="btn btn--secondary" onClick={() => setIsEditing(false)}>Cancel</button>
+            <button
+              className="btn btn--success"
+              onClick={() => onAct(esc.id, 'approved')}
+              disabled={!!acting}
+            >
+              <Save size={14} /> Save & Approve
+            </button>
+          </>
+        ) : (
+          <>
+            <button className="btn btn--secondary" onClick={() => setIsEditing(true)}>
+              <Edit2 size={14} /> Edit
+            </button>
+            <button
+              className="btn btn--primary"
+              onClick={() => onAct(esc.id, 'approved')}
+              disabled={!!acting}
+            >
+              <Check size={14} /> Approve
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
-}
-
-function getTimeAgo(dateStr) {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  return `${hrs}h ago`;
 }

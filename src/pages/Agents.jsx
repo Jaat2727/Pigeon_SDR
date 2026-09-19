@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight, Bot, Zap, RefreshCw } from 'lucide-react';
+import { ChevronRight, Zap, RefreshCw } from 'lucide-react';
 import api from '../api/index.js';
 import { useApp } from '../context/AppContext';
 import {
-  AgentCard, Drawer, LoadingState, ErrorState,
-  EngineBadge, StatusPill, Toggle
+  AgentCard, Drawer, LoadingState, ErrorState, Toggle
 } from '../components/index.jsx';
 import './Agents.css';
 
@@ -68,7 +67,7 @@ export default function Agents() {
         <div>
           <h1 className="page-title">Agents</h1>
           <p className="page-subtitle">
-            {runningCount} running · {idleCount} idle · {pausedCount} paused — all powered by DronaHQ Agentic AI
+            {runningCount} running · {idleCount} idle · {pausedCount} paused
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
@@ -79,6 +78,15 @@ export default function Agents() {
             View infrastructure <ChevronRight size={13} />
           </button>
         </div>
+      </div>
+
+      {/* AI Infrastructure banner — shown once */}
+      <div className="agents-infra-banner">
+        <div className="agents-infra-dot" />
+        <span className="agents-infra-label">AI Agent Infrastructure</span>
+        <span className="agents-infra-sep">·</span>
+        <span className="agents-infra-engine">DronaHQ Agentic AI connected</span>
+        <Zap size={11} style={{ color: 'var(--accent)', marginLeft: 'auto' }} />
       </div>
 
       {isKilled && (
