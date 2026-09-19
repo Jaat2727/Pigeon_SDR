@@ -14,8 +14,10 @@ import CreateCampaign from './pages/CreateCampaign';
 import KnowledgeBase from './pages/KnowledgeBase';
 import Prompts from './pages/Prompts';
 import ProspectDetail from './pages/ProspectDetail';
+import Prospects from './pages/Prospects';
 import ReviewQueue from './pages/ReviewQueue';
 import Settings from './pages/Settings';
+import Conflicts from './pages/Conflicts';
 
 import './App.css';
 
@@ -50,13 +52,13 @@ function AuthenticatedApp({ user, onSignOut }) {
           <Route path="/campaigns/:id/edit" element={<CreateCampaign />} />
           
           {/* Prospects */}
-          <Route path="/prospects" element={<PlaceholderPage title="Prospects" description="Browse, filter and manage your outreach prospect lists." />} />
+          <Route path="/prospects" element={<Prospects />} />
           <Route path="/prospects/:id" element={<ProspectDetail />} />
           
           {/* Other Modules */}
           <Route path="/prompts" element={<Prompts />} />
           <Route path="/review-queue" element={<ReviewQueue />} />
-          <Route path="/conflicts" element={<PlaceholderPage title="Conflicts" description="Review domain warmup issues, DMARC warnings, and sending conflicts." />} />
+          <Route path="/conflicts" element={<Conflicts />} />
           <Route path="/knowledge" element={<KnowledgeBase />} />
           <Route path="/settings" element={<Settings />} />
           
