@@ -99,6 +99,15 @@ export default function DashboardLayout({ children, user }) {
           ))}
         </nav>
 
+        {/* Sidebar Footer — Agent Engine */}
+        <div style={{ padding: '20px', borderTop: '1px solid var(--sidebar-border)', marginTop: 'auto' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--success)' }}></div>
+            <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--sidebar-brand)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Agent Engine</span>
+          </div>
+          <div style={{ fontSize: '10px', color: 'var(--sidebar-text)', fontFamily: 'var(--font-mono)' }}>Model: GPT-4o</div>
+          <div style={{ fontSize: '10px', color: 'var(--sidebar-text)', fontFamily: 'var(--font-mono)', marginTop: '4px' }}>DronaHQ v2.1.0</div>
+        </div>
       </aside>
 
 
@@ -142,6 +151,32 @@ export default function DashboardLayout({ children, user }) {
         <main className="sdr-main">
           {children}
         </main>
+        
+        {/* Sticky Status Strip */}
+        <div style={{ 
+          height: '32px', 
+          background: 'var(--surface-bar)', 
+          borderTop: '1px solid var(--border)', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          padding: '0 24px',
+          fontSize: '11px',
+          color: 'var(--text-secondary)',
+          fontFamily: 'var(--font-mono)',
+          zIndex: 50
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--success)' }}></div>
+              System Normal
+            </span>
+            <span>API Latency: 124ms</span>
+          </div>
+          <div>
+            Daily API Spend: <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>$142.50</span>
+          </div>
+        </div>
       </div>
 
       {showKillConfirm && (
