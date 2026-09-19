@@ -157,7 +157,7 @@ export function EmptyState({ icon: Icon = Inbox, title = 'Nothing here yet', mes
 // ── Paused Overlay ──
 export function PausedState({ message = 'This campaign is paused' }) {
   return (
-    <div className="state-box" style={{ opacity: 0.6 }}>
+    <div className="state-box" style={{ background: 'var(--canvas)', border: '1px dashed var(--border)', opacity: 0.8, borderRadius: 'var(--radius-card)' }}>
       <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <rect x="6" y="4" width="4" height="16" />
         <rect x="14" y="4" width="4" height="16" />

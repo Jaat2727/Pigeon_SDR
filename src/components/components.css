@@ -387,7 +387,8 @@
   border-bottom: none;
 }
 .agent-row--disabled, .channel-row--disabled {
-  opacity: 0.5;
+  opacity: 0.7;
+  background: var(--border-subtle);
 }
 .agent-row__info, .channel-row__info {
   flex: 1;
@@ -547,6 +548,7 @@
 .card {
   background: var(--surface-card);
   border-radius: var(--radius-card);
+  border: 1px solid var(--border);
   box-shadow: var(--shadow-card);
   overflow: hidden;
 }

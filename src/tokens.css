@@ -5,53 +5,53 @@
 @import url('https://fonts.googleapis.com/css2?family=Archivo:wght@600&family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
 
 :root {
-  /* ── Surfaces ── */
-  --canvas:       #0B121A;
-  --surface-bar:  #101A25; /* bars/sidebar */
-  --surface-card: #151F2B;
-  --surface-raised: #1B2734;
+  /* ── Surfaces (Light) ── */
+  --canvas:       #F7F9FC;
+  --surface-bar:  #FFFFFF; /* top bar */
+  --surface-card: #FFFFFF;
+  --surface-raised: #F2F5F9;
 
-  /* ── Sidebar ── */
-  --sidebar-bg:        #101A25;
-  --sidebar-surface:   #151F2B;
+  /* ── Sidebar (Dark) ── */
+  --sidebar-bg:        #0F1520;
+  --sidebar-surface:   #151F2B; /* Optional, keep slightly lighter if needed */
   --sidebar-hover:     #1B2734;
   --sidebar-active:    #1B2734;
-  --sidebar-active-text: #E7EEF5;
-  --sidebar-text:      #8FA2B2;
-  --sidebar-text-hover:#E7EEF5;
-  --sidebar-icon:      #647787;
-  --sidebar-section:   #647787;
+  --sidebar-active-text: #FFFFFF;
+  --sidebar-text:      #C9D4E0;
+  --sidebar-text-hover:#FFFFFF;
+  --sidebar-icon:      #6B7C8F;
+  --sidebar-section:   #6B7C8F;
   --sidebar-border:    #1F2C39;
-  --sidebar-brand:     #E7EEF5;
+  --sidebar-brand:     #FFFFFF;
 
-  /* ── Borders ── */
-  --border:        #263443;
-  --border-subtle: #1F2C39;
+  /* ── Borders (Light) ── */
+  --border:        #E2E8F0;
+  --border-subtle: #EDF1F6;
 
-  /* ── Text ── */
-  --text-primary:   #E7EEF5;
-  --text-secondary: #8FA2B2;
-  --text-muted:     #647787;
+  /* ── Text (Light) ── */
+  --text-primary:   #121A24;
+  --text-secondary: #5A6B7D;
+  --text-muted:     #8A99A9;
 
-  /* ── Accents & Status ── */
-  --accent:  #3B9AE1;
-  --accent-hover: #2982C4;
-  --accent-soft: rgba(59, 154, 225, 0.15);
+  /* ── Accents & Status (Retuned for Light) ── */
+  --accent:  #2563EB;
+  --accent-hover: #1D4ED8;
+  --accent-soft: #EBF5FF;
   
-  --success: #4FBF92;
-  --success-soft: rgba(79, 191, 146, 0.15);
+  --success: #0E9F6E;
+  --success-soft: #E7F6F0;
   
-  --warning: #D9A441;
-  --warning-soft: rgba(217, 164, 65, 0.15);
+  --warning: #B45309;
+  --warning-soft: #FEF3C7;
   
-  --danger:  #E05C5C;
-  --danger-soft: rgba(224, 92, 92, 0.15);
+  --danger:  #DC2626;
+  --danger-soft: #FDE8E8;
 
   /* Additional chart/icon colors */
   --brand-purple: #A78BFA;
-  --brand-blue: #3B9AE1;
+  --brand-blue: #2563EB;
   --brand-orange: #FB923C;
-  --brand-green: #4FBF92;
+  --brand-green: #0E9F6E;
 
   /* ── Typography ── */
   --font-ui:    'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -80,15 +80,15 @@
   --sp-10: 48px;
 
   /* ── Radii ── */
-  --radius-card:  10px;
-  --radius-input: 7px;
-  --radius-btn:   7px;
+  --radius-card:  14px;
+  --radius-input: 10px;
+  --radius-btn:   10px;
   --radius-pill:  999px;
 
   /* ── Shadows (soft and diffused) ── */
-  --shadow-card: 0px 4px 12px rgba(0, 0, 0, 0.2);
-  --shadow-raised: 0px 8px 24px rgba(0, 0, 0, 0.4);
-  --shadow-dropdown: 0px 12px 32px rgba(0, 0, 0, 0.5);
+  --shadow-card: 0 1px 2px rgba(16,24,40,0.05);
+  --shadow-raised: 0 4px 6px rgba(16,24,40,0.1);
+  --shadow-dropdown: 0 10px 15px rgba(16,24,40,0.1);
 
   /* ── Transitions ── */
   --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
